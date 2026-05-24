@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { MobileShell } from "@/components/MobileShell";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Camera, ChevronLeft, Droplet, Sparkles, User } from "lucide-react";
 
 export const Route = createFileRoute("/collect")({
