@@ -18,6 +18,7 @@ const RATE = 1.2; // R$ per liter
 const POINTS = 20; // per liter
 
 function CollectPage() {
+  useAuthGuard();
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
   const [liters, setLiters] = useState<number>(2);
