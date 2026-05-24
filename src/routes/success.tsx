@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Check, Droplets, Sparkles, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/success")({
