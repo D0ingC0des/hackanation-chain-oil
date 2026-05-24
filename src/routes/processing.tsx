@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/processing")({
