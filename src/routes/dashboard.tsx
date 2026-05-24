@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MobileShell } from "@/components/MobileShell";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Award, ChevronLeft, Droplets, Flame, Leaf, Medal, TrendingUp, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
