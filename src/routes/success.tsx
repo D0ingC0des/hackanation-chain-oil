@@ -17,6 +17,7 @@ export const Route = createFileRoute("/success")({
 });
 
 function SuccessPage() {
+  useAuthGuard();
   const { l, p } = Route.useSearch();
   const reward = (l * 1.2).toFixed(2).replace(".", ",");
   const points = l * 20;
