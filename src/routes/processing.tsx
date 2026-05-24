@@ -26,6 +26,7 @@ const STEPS = [
 ];
 
 function ProcessingPage() {
+  useAuthGuard();
   const { l, p } = Route.useSearch();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
