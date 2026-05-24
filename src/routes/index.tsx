@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Logo } from "@/components/Logo";
-import { ShieldCheck, Sparkles, Leaf } from "lucide-react";
+import { ShieldCheck, Sparkles, Leaf, AlertCircle } from "lucide-react";
+import { login } from "@/lib/auth";
 import heroImg from "@/assets/hero-community.jpg";
 
 export const Route = createFileRoute("/")({
