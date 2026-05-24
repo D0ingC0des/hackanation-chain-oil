@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/processing")({
@@ -25,6 +26,7 @@ const STEPS = [
 ];
 
 function ProcessingPage() {
+  useAuthGuard();
   const { l, p } = Route.useSearch();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);

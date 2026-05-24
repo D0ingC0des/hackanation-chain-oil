@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MobileShell } from "@/components/MobileShell";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Award, ChevronLeft, Droplets, Flame, Leaf, Medal, TrendingUp, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/dashboard")({
@@ -28,6 +29,7 @@ const BADGES = [
 ];
 
 function DashboardPage() {
+  useAuthGuard();
   return (
     <MobileShell>
       <header className="px-5 pt-6 pb-4 flex items-center justify-between bg-gradient-hero">

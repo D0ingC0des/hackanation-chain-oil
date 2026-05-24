@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { MobileShell } from "@/components/MobileShell";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Camera, ChevronLeft, Droplet, Sparkles, User } from "lucide-react";
 
 export const Route = createFileRoute("/collect")({
@@ -17,6 +18,7 @@ const RATE = 1.2; // R$ per liter
 const POINTS = 20; // per liter
 
 function CollectPage() {
+  useAuthGuard();
   const navigate = useNavigate();
   const [phone, setPhone] = useState("");
   const [liters, setLiters] = useState<number>(2);
