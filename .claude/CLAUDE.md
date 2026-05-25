@@ -239,6 +239,40 @@ npm install @chainlink/solana-sdk @coral-xyz/anchor
 
 ---
 
+## Sessão 2025-05-25 — o que foi feito e aprendido
+
+### Melhorias visuais
+
+- **BlurredHeroBg:** `blur(28px)` → `blur(8px)`, overlay `bg-background/70` → `bg-background/28`, `scale-110` → `scale-105`. Fundo da imagem agora aparece com mais textura sem comprometer legibilidade dos cards.
+- **Subtítulo collect:** `text-muted-foreground` → `text-foreground/80` — cor mais escura que mantém contraste contra fundo claro.
+
+### Captura de foto — componente adaptativo
+
+- Criado `src/components/pages/collect/photo-capture.tsx`.
+- **Mobile** (`useIsMobile() = true`): `<input type="file" capture="environment">` — abre câmera nativa diretamente; sem dependência extra.
+- **Desktop**: modal com `react-webcam` (preview ao vivo + botão "Capturar"). Usa `navigator.mediaDevices` via webcam.
+- Instalado `react-webcam@7.2.0`.
+- Bloco inline de 29 linhas em `collect.tsx` substituído por `<PhotoCapture photo={photo} onPhoto={setPhoto} />`.
+
+### Limpeza de arquivos órfãos (ui/)
+
+- 17 arquivos em `src/components/ui/` referenciavam pacotes removidos na sessão anterior.
+- Removidos: accordion, aspect-ratio, calendar, carousel, chart, collapsible, command, context-menu, drawer, hover-card, menubar, navigation-menu, resizable, scroll-area, slider, toggle, toggle-group.
+- `npx tsc --noEmit` passou limpo após remoção.
+
+### Bug: CTA mobile invisível / sobreposição
+
+- **Causa:** botão sticky `z-30 bottom-0` coberto pelo BottomNav `z-40 bottom-0`; ao mover para `bottom-24`, ainda sobrepunha o card de recompensa inline em telas curtas.
+- **Fix final:** CTA sticky removido. Botão colocado **inline** abaixo do card de recompensa mobile. Fluxo: `Celular → Litros → Foto → Recompensa → Confirmar`.
+- **Gotcha:** sticky CTA só funciona sem sobreposição quando o conteúdo é longo o suficiente para scrollar além dele. Para forms curtos, inline é sempre mais seguro.
+
+### BottomNav — ícone semântico
+
+- Ícone central trocado de `Plus` → `Droplet` (lucide-react) com label "Coletar".
+- Motivo: `Plus` é genérico; `Droplet` comunica diretamente a ação de coleta de óleo.
+
+---
+
 ## Contratos de domínio
 
 - **Rates:** R$ 1,20/litro · 20 pontos/litro · 1.000L água protegida/litro · 1,5kg CO₂ evitado/litro

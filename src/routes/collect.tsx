@@ -140,24 +140,33 @@ function CollectPage() {
             {/* Photo */}
             <PhotoCapture photo={photo} onPhoto={setPhoto} />
 
-            {/* Mobile: reward preview inline */}
-            <div className="lg:hidden rounded-3xl p-5 bg-gradient-reward shadow-reward text-reward-foreground">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="size-4" /> Recompensa instantânea
-              </div>
-              <div className="mt-2 flex items-end justify-between gap-4">
-                <div>
-                  <div className="text-xs opacity-80">Você paga via PIX</div>
-                  <div className="text-4xl font-extrabold tracking-tight">R$ {reward}</div>
+            {/* Mobile: reward preview + CTA inline */}
+            <div className="lg:hidden space-y-3 pb-4">
+              <div className="rounded-3xl p-5 bg-gradient-reward shadow-reward text-reward-foreground">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+                  <Sparkles className="size-4" /> Recompensa instantânea
                 </div>
-                <div className="text-right">
-                  <div className="text-xs opacity-80">Impacto</div>
-                  <div className="text-xl font-bold">+{points} pts</div>
-                  <div className="text-[11px] opacity-80">
-                    {water.toLocaleString("pt-BR")}L de água protegidos
+                <div className="mt-2 flex items-end justify-between gap-4">
+                  <div>
+                    <div className="text-xs opacity-80">Você paga via PIX</div>
+                    <div className="text-4xl font-extrabold tracking-tight">R$ {reward}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs opacity-80">Impacto</div>
+                    <div className="text-xl font-bold">+{points} pts</div>
+                    <div className="text-[11px] opacity-80">
+                      {water.toLocaleString("pt-BR")}L de água protegidos
+                    </div>
                   </div>
                 </div>
               </div>
+              <button
+                disabled={!canSubmit}
+                onClick={handleConfirm}
+                className="w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition disabled:opacity-50"
+              >
+                Confirmar coleta • R$ {reward}
+              </button>
             </div>
           </div>
 
@@ -222,16 +231,6 @@ function CollectPage() {
           </div>
         </div>
 
-        {/* Mobile sticky CTA */}
-        <div className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md sm:max-w-lg md:max-w-2xl px-5 pt-3 pb-5 safe-bottom bg-gradient-to-t from-background via-background to-transparent z-30">
-          <button
-            disabled={!canSubmit}
-            onClick={handleConfirm}
-            className="w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-elevated active:scale-[0.98] transition disabled:opacity-50"
-          >
-            Confirmar coleta • R$ {reward}
-          </button>
-        </div>
       </MobileShell>
     </div>
   );
