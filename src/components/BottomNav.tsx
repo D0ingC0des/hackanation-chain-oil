@@ -10,7 +10,7 @@ const items = [
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md sm:max-w-lg md:max-w-2xl z-40 safe-bottom px-4 pt-2">
+    <nav className="lg:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md sm:max-w-lg md:max-w-2xl z-40 safe-bottom px-4 pt-2">
       <div className="bg-card/95 backdrop-blur border border-border rounded-3xl shadow-elevated flex items-center justify-around px-2 py-2">
         {items.map((item, i) => {
           const Icon = item.icon;
