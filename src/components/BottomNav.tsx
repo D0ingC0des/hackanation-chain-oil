@@ -1,10 +1,10 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Droplet, Home, Trophy } from "lucide-react";
+import { BarChart2, Droplet, User } from "lucide-react";
 
 const items = [
-  { to: "/collect" as const, label: "Coleta", icon: Home },
+  { to: "/profile" as const, label: "Perfil", icon: User },
   { to: "/collect" as const, label: "Coletar", icon: Droplet, primary: true },
-  { to: "/dashboard" as const, label: "Impacto", icon: Trophy },
+  { to: "/dashboard" as const, label: "Impacto", icon: BarChart2 },
 ];
 
 export function BottomNav() {

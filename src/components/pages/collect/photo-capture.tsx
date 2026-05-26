@@ -50,7 +50,12 @@ export function PhotoCapture({ photo, onPhoto }: Props) {
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) onPhoto(URL.createObjectURL(f));
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+              if (typeof reader.result === "string") onPhoto(reader.result);
+            };
+            reader.readAsDataURL(f);
           }}
         />
         <PhotoThumbnail photo={photo} />

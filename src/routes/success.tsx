@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { Check, Droplets, Leaf, Sparkles, Trophy } from "lucide-react";
+import { useRate } from "@/hooks/use-rate";
+import { Check, Droplets, Leaf, Trophy } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 
@@ -24,8 +25,8 @@ export const Route = createFileRoute("/success")({
 function SuccessPage() {
   useAuthGuard();
   const { l, p } = Route.useSearch();
-  const reward = (l * 1.2).toFixed(2).replace(".", ",");
-  const points = l * 20;
+  const { rate } = useRate();
+  const reward = (l * rate).toFixed(2).replace(".", ",");
   const water = l * 1000;
   const co2 = (l * 1.5).toFixed(1);
 
@@ -63,16 +64,9 @@ function SuccessPage() {
             </p>
 
             <div
-              className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-3 animate-float-up"
+              className="mt-8 grid grid-cols-2 lg:grid-cols-3 gap-3 animate-float-up"
               style={{ animationDelay: "180ms" }}
             >
-              <div className="rounded-3xl bg-card border border-border p-4 text-left shadow-soft">
-                <div className="size-10 rounded-2xl bg-reward/20 flex items-center justify-center text-reward-foreground">
-                  <Sparkles className="size-5" />
-                </div>
-                <div className="mt-3 text-2xl font-extrabold">+{points}</div>
-                <div className="text-xs text-muted-foreground">pontos de impacto</div>
-              </div>
               <div className="rounded-3xl bg-card border border-border p-4 text-left shadow-soft">
                 <div className="size-10 rounded-2xl bg-water/20 flex items-center justify-center text-water">
                   <Droplets className="size-5" />
@@ -94,19 +88,6 @@ function SuccessPage() {
                 <div className="mt-3 text-2xl font-extrabold">OIL</div>
                 <div className="text-xs text-muted-foreground">tokens Solana</div>
               </div>
-            </div>
-
-            <div
-              className="mt-4 rounded-3xl bg-gradient-impact p-5 text-left text-primary-foreground shadow-elevated animate-float-up"
-              style={{ animationDelay: "240ms" }}
-            >
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider opacity-90">
-                <Trophy className="size-4" /> Você está perto do nível Prata
-              </div>
-              <div className="mt-3 h-2 bg-primary-foreground/20 rounded-full overflow-hidden">
-                <div className="h-full bg-reward rounded-full" style={{ width: "72%" }} />
-              </div>
-              <div className="mt-2 text-xs opacity-90">Faltam apenas 8L para o próximo nível.</div>
             </div>
 
             <div className="mt-6 space-y-2">

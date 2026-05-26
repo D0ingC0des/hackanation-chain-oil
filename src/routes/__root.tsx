@@ -8,6 +8,7 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
+import { SolanaWalletProvider } from "@/lib/wallet-provider";
 
 import appCss from "../styles.css?url";
 
@@ -96,9 +97,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster position="top-center" richColors />
-    </QueryClientProvider>
+    <SolanaWalletProvider>
+      <QueryClientProvider client={queryClient}>
+        <Outlet />
+        <Toaster position="top-center" richColors />
+      </QueryClientProvider>
+    </SolanaWalletProvider>
   );
 }

@@ -1,18 +1,20 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LogOut, Plus, Trophy } from "lucide-react";
+import { LogOut, Plus, BarChart2, User } from "lucide-react";
 import { Logo } from "./Logo";
-import { logout } from "@/lib/auth";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const NAV_ITEMS = [
-  { to: "/dashboard" as const, label: "Meu impacto", icon: Trophy },
+  { to: "/dashboard" as const, label: "Meu impacto", icon: BarChart2 },
+  { to: "/profile" as const, label: "Perfil", icon: User },
 ];
 
 export function TopNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
+  const { disconnect } = useWallet();
 
   async function handleLogout() {
-    await logout();
+    await disconnect();
     navigate({ to: "/" });
   }
 

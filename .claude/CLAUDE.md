@@ -275,8 +275,169 @@ npm install @chainlink/solana-sdk @coral-xyz/anchor
 
 ## Contratos de domínio
 
-- **Rates:** R$ 1,20/litro · 20 pontos/litro · 1.000L água protegida/litro · 1,5kg CO₂ evitado/litro
-- **Níveis:** Bronze (0–49L) · Prata (50–299L) · Ouro (300L+)
+- **Rates:** R$ 1,20/litro · 1.000L água protegida/litro · 1,5kg CO₂ evitado/litro
 - **Fluxo:** Collect → Processing (4 passos) → Success → Dashboard
-- **Auth:** operadores autenticam com telefone + PIN via Supabase Auth email/password
-- **Coleta:** cidadão recebe PIX (mock) e tokens OIL mintados na carteira custodial
+- **Auth:** wallet Solana (Phantom/Backpack) — connect se existir, guia de criação se não tiver
+- **Coleta:** cidadão recebe PIX (mock) e tokens OIL mintados na carteira
+- **Chainlink:** conversa on-chain ↔ off-chain, tem acesso ao contrato — integrar em seguida
+
+---
+
+## Sessão 2026-05-26 — o que foi feito
+
+### Remoção de pontuação e conquistas
+
+- Removidos de `dashboard.tsx`: Level hero (nível Prata + progress bar), card "pontos de impacto", seção Conquistas/badges, Ranking da comunidade (mobile + desktop). Imports limpos (`Award/Flame/Medal/Trophy`). `MetricCard` agora tem 3 cards: água, CO₂, PIX.
+- Removidos de `success.tsx`: card "pontos de impacto", banner de progresso de nível (gradient-impact). Grid ajustado de 4 → 3 colunas.
+- Removidos de `collect.tsx`: `POINTS`, cálculo `points`, exibição "+{points} pts" (mobile e desktop). Mantido: litros de água protegida.
+
+### Auth migrada para Solana Wallet Adapter
+
+- Instalados: `@solana/wallet-adapter-base`, `@solana/wallet-adapter-react`, `@solana/wallet-adapter-wallets`.
+- Criado `src/lib/wallet-provider.tsx` — `ConnectionProvider` + `WalletProvider` (devnet, Wallet Standard, `wallets={[]}`).
+- `src/routes/__root.tsx` envolto em `SolanaWalletProvider`.
+- `src/hooks/useAuthGuard.ts` reescrito: usa `useWallet().connected/connecting` em vez de Supabase.
+- `src/routes/index.tsx` reescrito: detecta carteiras instaladas (`readyState === "Installed"`); se nenhuma → guia de instalação com links para Phantom e Backpack.
+- `src/lib/auth.ts` simplificado: mantém só `AuthSession { publicKey, name }`.
+- `TopNav`/`BottomNav`: `Trophy` → `BarChart2`; logout usa `wallet.disconnect()`.
+- **Gotcha hydration (SSR):** `useWallet()` detecta carteiras via `window.solana` — inexistente no servidor. Fix: `const [mounted, setMounted] = useState(false)` + `useEffect(() => setMounted(true), [])`. `installedWallets` só calculado após `mounted`.
+
+### Onboarding de perfil (wallet_profiles)
+
+- Criada migration `002_wallet_profiles.sql`: tabela `wallet_profiles` com `public_key` como identificador (fora do Supabase Auth).
+- **Gotcha RLS:** tabelas criadas via SQL não recebem `GRANT` automático para `anon`. Solução: `grant select, insert, update on public.wallet_profiles to anon, authenticated`. Políticas sem restrição de role (`to anon`) falham se o client enviar JWT `authenticated` (sessão antiga em localStorage).
+- Criado `src/services/profileService.ts` — `getProfile(publicKey)` + `createProfile(input)`. Usa `(supabase as any).from(...)` porque `wallet_profiles` não está no tipo `Database`.
+- Criado `src/routes/onboarding.tsx`: form com nome, email, celular (máscara), estabelecimento, CNPJ (opcional), CEP → ViaCEP auto-preenche rua/bairro/cidade/estado.
+- Fluxo: connect → `getProfile` → se tem perfil: `/collect`, se não: `/onboarding` → salva → `/collect`.
+
+### Página de perfil
+
+- Criado `src/routes/profile.tsx`: exibe dados da carteira (ícone do adapter, nome, endereço completo selecionável, saldo SOL via `connection.getBalance()`, rede Devnet) e dados do perfil Supabase.
+- Saldo em SOL com 4 casas decimais via `LAMPORTS_PER_SOL`.
+- Botão de copiar endereço com feedback visual (ícone `CheckCheck`).
+- `BottomNav`: item "Coleta" (Home) → "Perfil" (User) — o botão primário já cobre coleta.
+- `TopNav`: adicionado link "Perfil" ao lado de "Meu impacto".
+
+---
+
+## Sessão 2026-05-26 (cont.) — Admin, Taxas, Coletas, PIX Woovi, Anchor + Chainlink
+
+### Página de Admin (`/admin`)
+
+- Criado `src/routes/admin.tsx` — oculta do menu; acesso direto por URL.
+- Auth por PIN via `VITE_ADMIN_PIN` (env var). Não usa carteira — funciona em qualquer browser.
+- Estado de sessão salvo em `sessionStorage` com chave `"chainoil_admin_auth"`.
+- Se `VITE_ADMIN_PIN` não estiver configurado → exibe `Blocked` (mensagem de ambiente não configurado).
+- Admin pode alterar o valor R$/litro — salvo na tabela `oil_config`.
+
+### Taxa dinâmica de R$/litro
+
+- Criada migration `003_oil_config.sql`: tabela key-value `oil_config`; seed inicial `rate_per_liter = '1.20'`.
+- Criado `src/services/rates-service.ts`: `getRatePerLiter()`, `getRateConfig()`, `updateRatePerLiter()`.
+- Criado `src/hooks/use-rate.ts`: wraper React com fallback `1.2` (evita flash de "—").
+- `collect.tsx` e `success.tsx`: removido `const RATE = 1.2` hardcoded; passaram a usar `useRate()`.
+
+### Endpoint público da taxa (`GET /api/oil-rate`)
+
+- Criado `src/routes/api/oil-rate.ts` usando padrão `createFileRoute` com `server.handlers.GET`.
+- **Gotcha TanStack Start:** não existe `createAPIFileRoute` em `@tanstack/react-start@1.167.50`. O padrão correto é `createFileRoute` com a opção `server: { handlers: { GET: async () => ... } }` — documentado em `.claude/skills/start-client-core/server-routes/SKILL.md`.
+- Retorna JSON: `{ rate_per_liter, currency, unit, updated_at }`. CORS aberto para contratos.
+
+### Tabela `oil_collections` (wallet-based)
+
+- Criada migration `004_oil_collections.sql`: tabela com `operator_key text` (carteira) em vez de FK para `auth.users`.
+- A tabela `collections` da migration 001 usa FK para `profiles → auth.users` — incompatível com wallet auth. Não usar.
+- Criado `src/services/collection-service.ts`: `saveCollection()`, `getMyStats()`, `getGlobalStats()`.
+
+### Dashboard com dados reais
+
+- Criado `src/hooks/use-dashboard.ts`: busca `getMyStats(publicKey)` — dados por estabelecimento (wallet).
+- CO₂ e água calculados por estabelecimento; global adiado para painel de admin futuro.
+- `dashboard.tsx` reescrito: usa `useDashboard()`, `Intl.NumberFormat('pt-BR')`, `MetricCard` com `Loader2` enquanto carrega.
+- `processing.tsx`: salva coleta no mount via `useRef(false)` guard (previne duplo disparo no StrictMode).
+
+### PIX via Woovi (Edge Function)
+
+- Criada migration `005_pix_fields.sql`: adiciona `pix_id`, `pix_status`, `pix_paid_at` a `oil_collections`.
+- Criado `supabase/functions/process-collection/index.ts`: busca taxa → salva coleta → chama Woovi → atualiza status.
+  - Endpoint Woovi usado: `POST /api/v1/transfer`. **Verificar** se é o correto para cash-out na documentação da conta criada.
+  - Auth Woovi: header `Authorization: <WOOVI_APP_ID>`.
+  - Valor enviado em centavos (`rewardBrl * 100`).
+  - `pix_status`: `pending` → `processing` (Woovi aceitou) | `failed` (erro).
+- `collection-service.ts`: adicionado `processCollection()` que invoca a edge function via `supabase.functions.invoke`.
+- `processing.tsx`: simplificado — chama só `processCollection()`. A edge function gerencia taxa + save + PIX.
+
+### Programa Anchor + Chainlink SOL/USD
+
+- Criado workspace Anchor em `anchor/` (fora de `oil-drop-rewards/`).
+- `anchor/programs/chain-oil/`: instrução `register_collection` que:
+  1. Valida owner do feed Chainlink (`HEvSKofvBgfaexv23kMabbYqxasxU3mQ4ibBMEmJWHny`).
+  2. Lê SOL/USD via `chainlink_solana::v2::read_feed_v2` (SDK v2 — não CPI deprecated).
+  3. Valida freshness ≤ 3.600s.
+  4. Grava PDA `Collection` com litros, recompensa em centavos, preço atestado, UUID Supabase.
+  5. Incrementa contador `OperatorState` PDA.
+- Feed SOL/USD Devnet: `HgTtcbcmp5BeThax5AU8vg4VwK79qAvAKKegfthMvWdo` — **verificar se ainda ativo** em https://docs.chain.link/data-feeds/price-feeds/addresses?network=solana.
+- Criado `src/services/anchor-service.ts`: client TypeScript para chamar o programa do frontend após coleta confirmada.
+- Criado `anchor/tests/chain-oil.ts`: teste de integração devnet.
+
+---
+
+## Sessão 2026-05-26 (cont.) — Upload de foto da coleta
+
+### Fluxo implementado
+
+A foto capturada em `collect.tsx` agora é persistida no Supabase Storage e vinculada à coleta.
+
+**Caminho no bucket:** `collection-photos/{operatorKey}/{collectionId}.jpg`
+- Bucket `collection-photos` criado na migration 001 (público, RLS com insert para authenticated e select público).
+- `operator_key` (chave pública Solana do coletador) define a pasta — funciona como "id do estabelecimento".
+- `collectionId` (UUID Supabase) é o nome do arquivo.
+
+### Mudanças por arquivo
+
+| Arquivo | O que mudou |
+|---------|-------------|
+| `photo-capture.tsx` | Mobile: trocado `URL.createObjectURL(file)` por `FileReader.readAsDataURL(file)` — foto agora é sempre base64 dataUrl (não objeto URL volátil) |
+| `collect.tsx` | `handleConfirm()` salva a foto em `sessionStorage.setItem("chainoil_pending_photo", photo)` antes de navegar; remove a chave se não há foto |
+| `collection-service.ts` | Adicionados: helper `dataUrlToBlob()` + função `uploadCollectionPhoto(collectionId, operatorKey, dataUrl)` — faz upload para Storage, obtém URL pública, atualiza `oil_collections.photo_url` |
+| `processing.tsx` | Após `processCollection()` resolver: lê foto do sessionStorage, limpa a chave, chama `uploadCollectionPhoto()` (fire-and-forget — não bloqueia tela de sucesso) |
+
+### Gotchas
+
+- **Object URL vs. base64:** `URL.createObjectURL()` no mobile gerava uma URL `blob://` que não sobrevive à navegação client-side no sentido de não ser serializável. `FileReader.readAsDataURL()` produz base64 puro, sempre passível de ser salvo em sessionStorage.
+- **sessionStorage como ponte:** foto não vai nos search params da URL (base64 pode chegar a 100 KB). sessionStorage é limpo após uso para evitar lixo entre sessões.
+- **Coluna `photo_url` já existia:** migration 004 já tinha `photo_url text` — não foi necessária nova migration.
+
+---
+
+## O que está faltando (pendências obrigatórias)
+
+### Para o PIX funcionar
+
+| # | Tarefa | Comando / Ação |
+|---|--------|----------------|
+| 1 | Rodar migrations 003, 004, 005 | Colar SQL no Supabase SQL Editor |
+| 2 | Criar conta Woovi + obter App ID sandbox | https://woovi.com |
+| 3 | Configurar secret da edge function | `supabase secrets set WOOVI_APP_ID=<token>` |
+| 4 | **Verificar endpoint Woovi cash-out** | No painel da conta: confirmar se é `/transfer` ou outro. Ajustar 1 linha em `supabase/functions/process-collection/index.ts` |
+| 5 | Adicionar `VITE_ADMIN_PIN` ao `.env.local` | `VITE_ADMIN_PIN=sua_senha_aqui` |
+| 6 | Deploy da edge function | `supabase functions deploy process-collection` |
+
+### Para o Anchor + Chainlink funcionar
+
+| # | Tarefa | Comando |
+|---|--------|---------|
+| 7 | Instalar Anchor CLI | `avm install 0.31.1 && avm use 0.31.1` |
+| 8 | Build do programa | `cd anchor && anchor build` |
+| 9 | Substituir Program ID placeholder | Copiar ID gerado em `lib.rs`, `Anchor.toml`, `src/services/anchor-service.ts` (substituir `CHAiNoiLXXX...`) |
+| 10 | Deploy no devnet | `anchor deploy --provider.cluster devnet` |
+| 11 | Rodar teste de integração | `anchor test` (valida leitura Chainlink real) |
+| 12 | Integrar `registerCollectionOnChain` no `processing.tsx` | Chamar após `processCollection()` resolver; passar `collectionId` retornado como `supabaseId` |
+
+### Pendências de produto (fase 2)
+
+- **`tx_hash` na coleta:** popular `oil_collections.tx_hash` com a assinatura Solana após confirmação da tx Anchor.
+- **Webhook Woovi:** receber confirmação de `pix_status → paid` e atualizar `pix_paid_at`. Criar endpoint ou Supabase Edge Function `woovi-webhook`.
+- **Dashboard global de admin:** totais de CO₂ e água de todos os operadores (usa `getGlobalStats()` já implementado no service).
+- **OIL Token SPL:** mint do token para o operador após coleta confirmada (não iniciado).
+- **Verificar endereço do feed SOL/USD Devnet:** `HgTtcbcmp5BeThax5AU8vg4VwK79qAvAKKegfthMvWdo` — confirmar se ainda está ativo na documentação Chainlink antes do deploy.

@@ -10,19 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuccessRouteImport } from './routes/success'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProcessingRouteImport } from './routes/processing'
+import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CollectRouteImport } from './routes/collect'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiOilRateRouteImport } from './routes/api/oil-rate'
 
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProcessingRoute = ProcessingRouteImport.update({
   id: '/processing',
   path: '/processing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingRoute = OnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -35,48 +49,102 @@ const CollectRoute = CollectRouteImport.update({
   path: '/collect',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOilRateRoute = ApiOilRateRouteImport.update({
+  id: '/api/oil-rate',
+  path: '/api/oil-rate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
+  '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
+  '/profile': typeof ProfileRoute
   '/success': typeof SuccessRoute
+  '/api/oil-rate': typeof ApiOilRateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
+  '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
+  '/profile': typeof ProfileRoute
   '/success': typeof SuccessRoute
+  '/api/oil-rate': typeof ApiOilRateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
+  '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
+  '/profile': typeof ProfileRoute
   '/success': typeof SuccessRoute
+  '/api/oil-rate': typeof ApiOilRateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/collect' | '/dashboard' | '/processing' | '/success'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/collect'
+    | '/dashboard'
+    | '/onboarding'
+    | '/processing'
+    | '/profile'
+    | '/success'
+    | '/api/oil-rate'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/collect' | '/dashboard' | '/processing' | '/success'
-  id: '__root__' | '/' | '/collect' | '/dashboard' | '/processing' | '/success'
+  to:
+    | '/'
+    | '/admin'
+    | '/collect'
+    | '/dashboard'
+    | '/onboarding'
+    | '/processing'
+    | '/profile'
+    | '/success'
+    | '/api/oil-rate'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/collect'
+    | '/dashboard'
+    | '/onboarding'
+    | '/processing'
+    | '/profile'
+    | '/success'
+    | '/api/oil-rate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
   CollectRoute: typeof CollectRoute
   DashboardRoute: typeof DashboardRoute
+  OnboardingRoute: typeof OnboardingRoute
   ProcessingRoute: typeof ProcessingRoute
+  ProfileRoute: typeof ProfileRoute
   SuccessRoute: typeof SuccessRoute
+  ApiOilRateRoute: typeof ApiOilRateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -88,11 +156,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SuccessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/processing': {
       id: '/processing'
       path: '/processing'
       fullPath: '/processing'
       preLoaderRoute: typeof ProcessingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding': {
+      id: '/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -109,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -116,15 +205,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oil-rate': {
+      id: '/api/oil-rate'
+      path: '/api/oil-rate'
+      fullPath: '/api/oil-rate'
+      preLoaderRoute: typeof ApiOilRateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
   CollectRoute: CollectRoute,
   DashboardRoute: DashboardRoute,
+  OnboardingRoute: OnboardingRoute,
   ProcessingRoute: ProcessingRoute,
+  ProfileRoute: ProfileRoute,
   SuccessRoute: SuccessRoute,
+  ApiOilRateRoute: ApiOilRateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

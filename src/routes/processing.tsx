@@ -1,9 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Logo } from "@/components/Logo";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
+import { processCollection, uploadCollectionPhoto } from "@/services/collection-service";
 
 export const Route = createFileRoute("/processing")({
   component: ProcessingPage,
@@ -33,7 +35,24 @@ function ProcessingPage() {
   useAuthGuard();
   const { l, p } = Route.useSearch();
   const navigate = useNavigate();
+  const { publicKey } = useWallet();
   const [step, setStep] = useState(0);
+  const savedRef = useRef(false);
+
+  useEffect(() => {
+    if (savedRef.current || !publicKey) return;
+    savedRef.current = true;
+    const operatorKey = publicKey.toBase58();
+    processCollection({ operatorKey, citizenPhone: p, liters: l })
+      .then(({ collectionId }) => {
+        const photo = sessionStorage.getItem("chainoil_pending_photo");
+        sessionStorage.removeItem("chainoil_pending_photo");
+        if (photo) {
+          uploadCollectionPhoto(collectionId, operatorKey, photo).catch(() => {});
+        }
+      })
+      .catch(() => {});
+  }, [publicKey, l, p]);
 
   useEffect(() => {
     if (step >= STEPS.length) {

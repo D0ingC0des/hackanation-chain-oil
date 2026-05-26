@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/lib/supabase";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 export function useAuthGuard() {
   const navigate = useNavigate();
+  const { connected, connecting } = useWallet();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session) navigate({ to: "/", replace: true });
-    });
-  }, [navigate]);
+    if (!connecting && !connected) {
+      navigate({ to: "/", replace: true });
+    }
+  }, [connected, connecting, navigate]);
 }

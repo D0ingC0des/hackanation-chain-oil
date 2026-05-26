@@ -5,6 +5,7 @@ import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { ChevronLeft, Droplet, Leaf, Sparkles, User, Zap } from "lucide-react";
 import { PhotoCapture } from "@/components/pages/collect/photo-capture";
+import { useRate } from "@/hooks/use-rate";
 
 export const Route = createFileRoute("/collect")({
   component: CollectPage,
@@ -20,12 +21,10 @@ export const Route = createFileRoute("/collect")({
   }),
 });
 
-const RATE = 1.2;
-const POINTS = 20;
-
 function CollectPage() {
   useAuthGuard();
   const navigate = useNavigate();
+  const { rate } = useRate();
   const [phone, setPhone] = useState("");
   const [liters, setLiters] = useState<number>(2);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -37,13 +36,17 @@ function CollectPage() {
     return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   };
 
-  const reward = useMemo(() => (liters * RATE).toFixed(2).replace(".", ","), [liters]);
-  const points = liters * POINTS;
+  const reward = useMemo(() => (liters * rate).toFixed(2).replace(".", ","), [liters, rate]);
   const water = liters * 1000;
   const co2 = (liters * 1.5).toFixed(1);
   const canSubmit = phone.replace(/\D/g, "").length >= 10 && liters > 0;
 
   function handleConfirm() {
+    if (photo) {
+      sessionStorage.setItem("chainoil_pending_photo", photo);
+    } else {
+      sessionStorage.removeItem("chainoil_pending_photo");
+    }
     navigate({ to: "/processing", search: { l: liters, p: phone } as { l: number; p: string } });
   }
 
@@ -152,8 +155,6 @@ function CollectPage() {
                     <div className="text-4xl font-extrabold tracking-tight">R$ {reward}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs opacity-80">Impacto</div>
-                    <div className="text-xl font-bold">+{points} pts</div>
                     <div className="text-[11px] opacity-80">
                       {water.toLocaleString("pt-BR")}L de água protegidos
                     </div>
@@ -180,11 +181,7 @@ function CollectPage() {
                 </div>
                 <div className="text-xs opacity-80">Valor via PIX</div>
                 <div className="text-5xl font-extrabold tracking-tight mt-1">R$ {reward}</div>
-                <div className="mt-4 grid grid-cols-2 gap-3 text-xs">
-                  <div className="bg-white/15 rounded-2xl p-3">
-                    <div className="font-bold text-base">+{points}</div>
-                    <div className="opacity-80">pontos de impacto</div>
-                  </div>
+                <div className="mt-4 text-xs">
                   <div className="bg-white/15 rounded-2xl p-3">
                     <div className="font-bold text-base">{water.toLocaleString("pt-BR")}L</div>
                     <div className="opacity-80">água protegida</div>

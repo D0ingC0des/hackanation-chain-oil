@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { Logo } from "@/components/Logo";
-import { ShieldCheck, Sparkles, Leaf, AlertCircle, Droplets, Recycle, Zap } from "lucide-react";
-import { login } from "@/lib/auth";
+import { getProfile } from "@/services/profileService";
+import { useRate } from "@/hooks/use-rate";
+import { ShieldCheck, Sparkles, Leaf, Droplets, Recycle, Zap, Wallet, ExternalLink, X } from "lucide-react";
 import heroImg from "@/assets/hero-community.jpg";
 
 export const Route = createFileRoute("/")({
@@ -10,47 +12,78 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Entrar — ChainOil" },
-      { name: "description", content: "Acesse sua conta de parceiro ChainOil e comece a transformar óleo em renda e impacto." },
+      { name: "description", content: "Conecte sua carteira Solana e comece a transformar óleo em renda e impacto." },
     ],
   }),
 });
 
-const FEATURES = [
-  { icon: Zap, label: "PIX instantâneo", desc: "R$ 1,20 por litro direto na conta" },
+const STATIC_FEATURES = [
   { icon: Droplets, label: "1.000L de água protegidos", desc: "Por cada litro de óleo coletado" },
   { icon: Recycle, label: "Tokens OIL na Solana", desc: "Recompensas em blockchain por coleta" },
 ];
 
+const WALLETS = [
+  {
+    name: "Phantom",
+    desc: "A carteira mais popular da Solana",
+    desktopUrl: "https://phantom.app/download",
+    mobileUrl: "https://phantom.app/download",
+    icon: "👻",
+  },
+  {
+    name: "Backpack",
+    desc: "Carteira com suporte a xNFT",
+    desktopUrl: "https://www.backpack.app/download",
+    mobileUrl: "https://www.backpack.app/download",
+    icon: "🎒",
+  },
+];
+
 function LoginPage() {
   const navigate = useNavigate();
-  const [phone, setPhone] = useState("");
-  const [pin, setPin] = useState("");
+  const { wallets, select, connect, connecting, connected, publicKey } = useWallet();
+  const { rate } = useRate();
+  const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const formatPhone = (v: string) => {
-    const d = v.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 2) return d;
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  };
+  const features = [
+    { icon: Zap, label: "PIX instantâneo", desc: `R$ ${rate.toFixed(2).replace(".", ",")} por litro direto na conta` },
+    ...STATIC_FEATURES,
+  ];
 
-  const valid = phone.replace(/\D/g, "").length >= 10 && pin.length === 4;
+  useEffect(() => setMounted(true), []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!valid) return;
-    setError("");
-    setLoading(true);
-    const phoneRaw = phone.replace(/\D/g, "");
-    const session = await login(phoneRaw, pin);
-    if (session) {
-      navigate({ to: "/collect" });
-    } else {
-      setLoading(false);
-      setError("Telefone ou PIN incorretos.");
+  // Wallet detection only runs client-side — gate behind mounted to avoid SSR mismatch
+  const installedWallets = mounted ? wallets.filter((w) => w.readyState === "Installed") : [];
+  const hasWallet = installedWallets.length > 0;
+
+  useEffect(() => {
+    if (connecting || connected) setError("");
+  }, [connecting, connected]);
+
+  useEffect(() => {
+    if (connected && publicKey) {
+      getProfile(publicKey.toBase58()).then((profile) => {
+        navigate({ to: profile ? "/collect" : "/onboarding" });
+      });
     }
-  };
+  }, [connected, publicKey, navigate]);
+
+  async function handleConnect() {
+    setError("");
+    if (!hasWallet) {
+      setShowInstallGuide(true);
+      return;
+    }
+    try {
+      if (!wallets[0]) return;
+      select(installedWallets[0].adapter.name);
+      await connect();
+    } catch {
+      setError("Não foi possível conectar. Tente novamente.");
+    }
+  }
 
   return (
     <main className="min-h-screen flex flex-col lg:flex-row">
@@ -73,7 +106,7 @@ function LoginPage() {
           </p>
 
           <div className="mt-10 space-y-4">
-            {FEATURES.map(({ icon: Icon, label, desc }) => (
+            {features.map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-center gap-4">
                 <div className="size-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
                   <Icon className="size-5 text-primary" />
@@ -101,7 +134,7 @@ function LoginPage() {
         </div>
       </div>
 
-      {/* ── RIGHT: login form panel ── */}
+      {/* ── RIGHT: connect panel ── */}
       <div className="flex flex-col flex-1 bg-background lg:max-w-[480px] lg:border-l lg:border-border">
 
         {/* Mobile-only header */}
@@ -129,64 +162,117 @@ function LoginPage() {
               <span className="text-primary">Receba na hora.</span>
             </h1>
             <p className="mt-2 text-muted-foreground text-[15px]">
-              Acesse sua conta de parceiro e transforme óleo em renda e impacto.
+              Conecte sua carteira Solana para acessar a plataforma.
             </p>
           </section>
         </div>
 
-        {/* Form */}
+        {/* Connect form */}
         <div className="flex flex-col flex-1 justify-center px-5 lg:px-12 py-8">
           <div className="hidden lg:block mb-8">
             <Logo />
             <h2 className="mt-6 text-2xl font-extrabold tracking-tight">Entrar na plataforma</h2>
-            <p className="mt-1 text-muted-foreground text-sm">Acesse com seu celular e PIN de operador.</p>
+            <p className="mt-1 text-muted-foreground text-sm">Conecte sua carteira Solana para continuar.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <label className="block">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Celular</span>
-              <input
-                type="tel"
-                inputMode="numeric"
-                placeholder="(11) 90000-0000"
-                value={phone}
-                onChange={(e) => { setPhone(formatPhone(e.target.value)); if (error) setError(""); }}
-                className="mt-1 w-full h-14 px-4 rounded-2xl bg-card border border-border text-lg font-medium focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </label>
-            <label className="block">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Código PIN</span>
-              <input
-                type="password"
-                inputMode="numeric"
-                placeholder="• • • •"
-                maxLength={4}
-                value={pin}
-                onChange={(e) => { setPin(e.target.value.replace(/\D/g, "")); if (error) setError(""); }}
-                className="mt-1 w-full h-14 px-4 rounded-2xl bg-card border border-border text-lg tracking-[0.5em] text-center font-bold focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </label>
+          {!showInstallGuide ? (
+            <div className="space-y-3">
+              {/* Wallets detectadas */}
+              {hasWallet && (
+                <div className="space-y-2 mb-2">
+                  {installedWallets.map((w) => (
+                    <button
+                      key={w.adapter.name}
+                      type="button"
+                      onClick={async () => {
+                        setError("");
+                        try {
+                          select(w.adapter.name);
+                          await connect();
+                        } catch {
+                          setError("Não foi possível conectar. Tente novamente.");
+                        }
+                      }}
+                      className="w-full h-14 flex items-center gap-3 px-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition font-semibold text-sm"
+                    >
+                      {w.adapter.icon && (
+                        <img src={w.adapter.icon} alt={w.adapter.name} className="size-6 rounded-lg" />
+                      )}
+                      <span className="flex-1 text-left">Conectar {w.adapter.name}</span>
+                      <Wallet className="size-4 text-muted-foreground" />
+                    </button>
+                  ))}
+                </div>
+              )}
 
-            {error && (
-              <div className="flex items-center gap-2 rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">
-                <AlertCircle className="size-4 shrink-0" />
-                {error}
+              {/* Botão principal */}
+              <button
+                type="button"
+                onClick={handleConnect}
+                disabled={connecting}
+                className="w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-soft active:scale-[0.98] transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Wallet className="size-5" />
+                {connecting ? "Conectando…" : hasWallet ? "Conectar carteira" : "Instalar carteira"}
+              </button>
+
+              {error && (
+                <p className="text-sm text-destructive text-center">{error}</p>
+              )}
+
+              <div className="flex items-center justify-center gap-2 pt-2 text-xs text-muted-foreground">
+                <ShieldCheck className="size-4 text-primary" />
+                Conexão segura • Sem custódia de chaves
               </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={!valid || loading}
-              className="w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-soft active:scale-[0.98] transition disabled:opacity-50"
-            >
-              {loading ? "Entrando…" : "Entrar na plataforma"}
-            </button>
-
-            <div className="flex items-center justify-center gap-2 pt-2 text-xs text-muted-foreground">
-              <ShieldCheck className="size-4 text-primary" />
-              Conexão segura • Dados protegidos
             </div>
-          </form>
+          ) : (
+            /* Guia de instalação */
+            <div className="space-y-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-bold text-base">Instale uma carteira Solana</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowInstallGuide(false)}
+                  className="size-8 rounded-full bg-secondary flex items-center justify-center"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Uma carteira Solana é necessária para acessar a plataforma. É gratuita e leva menos de 2 minutos para criar.
+              </p>
+
+              {WALLETS.map((w) => (
+                <a
+                  key={w.name}
+                  href={w.desktopUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition"
+                >
+                  <div className="size-12 rounded-2xl bg-secondary flex items-center justify-center text-2xl">
+                    {w.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-semibold text-sm">{w.name}</div>
+                    <div className="text-xs text-muted-foreground">{w.desc}</div>
+                  </div>
+                  <ExternalLink className="size-4 text-muted-foreground shrink-0" />
+                </a>
+              ))}
+
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                Após instalar, volte aqui e clique em "Conectar carteira".
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowInstallGuide(false)}
+                className="w-full h-12 rounded-2xl bg-secondary text-foreground font-semibold text-sm"
+              >
+                Já instalei — Voltar
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="px-5 lg:px-12 pb-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
