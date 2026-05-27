@@ -1,7 +1,12 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { LogOut, Plus, BarChart2, User } from "lucide-react";
+import { LogOut, Plus, BarChart2, User, Wallet } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
 import { Logo } from "./Logo";
 import { useWallet } from "@solana/wallet-adapter-react";
+
+function truncate(key: string) {
+  return `${key.slice(0, 4)}...${key.slice(-4)}`;
+}
 
 const NAV_ITEMS = [
   { to: "/dashboard" as const, label: "Meu impacto", icon: BarChart2 },
@@ -11,7 +16,20 @@ const NAV_ITEMS = [
 export function TopNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { disconnect } = useWallet();
+  const { disconnect, publicKey } = useWallet();
+  const [expanded, setExpanded] = useState(false);
+  const addressRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!expanded) return;
+    function handleOutside(e: MouseEvent) {
+      if (addressRef.current && !addressRef.current.contains(e.target as Node)) {
+        setExpanded(false);
+      }
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [expanded]);
 
   async function handleLogout() {
     await disconnect();
@@ -43,6 +61,19 @@ export function TopNav() {
       </nav>
 
       <div className="flex items-center gap-2">
+        {publicKey && (
+          <button
+            ref={addressRef}
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-secondary text-xs font-mono text-muted-foreground hover:text-foreground transition cursor-pointer"
+          >
+            <Wallet className="size-3.5 text-primary shrink-0" />
+            <span className={expanded ? "max-w-[320px]" : "max-w-[80px] truncate"}>
+              {expanded ? publicKey.toBase58() : truncate(publicKey.toBase58())}
+            </span>
+          </button>
+        )}
         <Link
           to="/collect"
           className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold shadow-soft hover:opacity-90 transition"

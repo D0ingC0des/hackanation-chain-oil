@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Logo } from "@/components/Logo";
-import { getProfile } from "@/services/profileService";
+import { getProfile, touchWalletLogin } from "@/services/profileService";
 import { useRate } from "@/hooks/use-rate";
 import { ShieldCheck, Sparkles, Leaf, Droplets, Recycle, Zap, Wallet, ExternalLink, X } from "lucide-react";
 import heroImg from "@/assets/hero-community.jpg";
@@ -30,13 +30,6 @@ const WALLETS = [
     mobileUrl: "https://phantom.app/download",
     icon: "👻",
   },
-  {
-    name: "Backpack",
-    desc: "Carteira com suporte a xNFT",
-    desktopUrl: "https://www.backpack.app/download",
-    mobileUrl: "https://www.backpack.app/download",
-    icon: "🎒",
-  },
 ];
 
 function LoginPage() {
@@ -55,7 +48,7 @@ function LoginPage() {
   useEffect(() => setMounted(true), []);
 
   // Wallet detection only runs client-side — gate behind mounted to avoid SSR mismatch
-  const installedWallets = mounted ? wallets.filter((w) => w.readyState === "Installed") : [];
+  const installedWallets = mounted ? wallets.filter((w) => w.readyState === "Installed" && w.adapter.name === "Phantom") : [];
   const hasWallet = installedWallets.length > 0;
 
   useEffect(() => {
@@ -65,6 +58,7 @@ function LoginPage() {
   useEffect(() => {
     if (connected && publicKey) {
       getProfile(publicKey.toBase58()).then((profile) => {
+        if (profile) touchWalletLogin(publicKey.toBase58()).catch(() => {});
         navigate({ to: profile ? "/collect" : "/onboarding" });
       });
     }

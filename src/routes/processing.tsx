@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { useWallet } from "@solana/wallet-adapter-react";
+import { useWallet, useAnchorWallet } from "@solana/wallet-adapter-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Logo } from "@/components/Logo";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 import { processCollection, uploadCollectionPhoto } from "@/services/collection-service";
+import { registerCollectionOnChain } from "@/services/anchor-service";
+import { useRate } from "@/hooks/use-rate";
 
 export const Route = createFileRoute("/processing")({
   component: ProcessingPage,
@@ -31,38 +33,72 @@ const STEPS = [
   "Enviando seu PIX",
 ];
 
+const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
 function ProcessingPage() {
   useAuthGuard();
   const { l, p } = Route.useSearch();
   const navigate = useNavigate();
   const { publicKey } = useWallet();
+  const anchorWallet = useAnchorWallet();
+  const { rate } = useRate();
   const [step, setStep] = useState(0);
   const savedRef = useRef(false);
 
   useEffect(() => {
     if (savedRef.current || !publicKey) return;
     savedRef.current = true;
+
     const operatorKey = publicKey.toBase58();
-    processCollection({ operatorKey, citizenPhone: p, liters: l })
-      .then(({ collectionId }) => {
+    const collectionId = crypto.randomUUID();
+
+    async function run() {
+      setStep(1); // "Validando coleta"
+      await delay(400);
+
+      setStep(2); // "Registrando impacto ambiental" — on-chain
+      let txHash: string | undefined;
+      if (anchorWallet) {
+        try {
+          txHash = await registerCollectionOnChain({
+            wallet: anchorWallet,
+            supabaseId: collectionId,
+            litersML: Math.round(l * 1000),
+            rewardCentavos: Math.round(l * rate * 100),
+          });
+        } catch (e) {
+          console.warn("on-chain registration skipped:", e);
+        }
+      }
+
+      setStep(3); // "Enviando seu PIX" — edge function + Woovi
+      try {
+        const result = await processCollection({
+          operatorKey,
+          citizenPhone: p,
+          liters: l,
+          txHash,
+          collectionId,
+        });
         const photo = sessionStorage.getItem("chainoil_pending_photo");
         sessionStorage.removeItem("chainoil_pending_photo");
         if (photo) {
-          uploadCollectionPhoto(collectionId, operatorKey, photo).catch(() => {});
+          uploadCollectionPhoto(result.collectionId, operatorKey, photo).catch(() => {});
         }
-      })
-      .catch(() => {});
-  }, [publicKey, l, p]);
+      } catch {}
+
+      setStep(4); // done
+    }
+
+    run();
+  }, [publicKey, anchorWallet, l, p, rate]);
 
   useEffect(() => {
-    if (step >= STEPS.length) {
-      const t = setTimeout(
-        () => navigate({ to: "/success", search: { l, p } as { l: number; p: string } }),
-        500,
-      );
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(() => setStep((s) => s + 1), 750);
+    if (step < STEPS.length) return;
+    const t = setTimeout(
+      () => navigate({ to: "/success", search: { l, p } as { l: number; p: string } }),
+      500,
+    );
     return () => clearTimeout(t);
   }, [step, navigate, l, p]);
 
