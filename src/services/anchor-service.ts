@@ -40,9 +40,16 @@ export async function registerCollectionOnChain(
   const connection = new Connection(RPC, "confirmed");
   const provider = new AnchorProvider(connection, wallet, { commitment: "confirmed" });
 
-  // IDL importado do build — disponível após `anchor build`
+  // IDL gerado por `anchor build` — o stub em /anchor/target/idl/ é substituído pelo build real
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const idl = (await import("../../anchor/target/idl/chain_oil.json")) as any;
+  let idl: any;
+  try {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore — arquivo gerado por `anchor build`; stub existente até o primeiro build
+    idl = (await import("../../anchor/target/idl/chain_oil.json")) as any;
+  } catch {
+    throw new Error("Anchor IDL not built yet — run `anchor build` inside /anchor");
+  }
   const program = new Program(idl, provider);
 
   const [operatorState] = PublicKey.findProgramAddressSync(
