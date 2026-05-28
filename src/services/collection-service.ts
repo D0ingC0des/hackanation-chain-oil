@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from "@/lib/supabase";
 
 const table = () => (supabase as any).from("oil_collections");
@@ -52,12 +53,11 @@ export async function uploadCollectionPhoto(
 
   if (uploadError) throw uploadError;
 
-  const { data: { publicUrl } } = supabase.storage
-    .from("collection-photos")
-    .getPublicUrl(path);
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("collection-photos").getPublicUrl(path);
 
-  const { error: updateError } = await (supabase as any)
-    .from("oil_collections")
+  const { error: updateError } = await table()
     .update({ photo_url: publicUrl })
     .eq("id", collectionId);
 
@@ -115,7 +115,7 @@ function sumRows(rows: Array<{ liters: string; reward_brl: string }>): Collectio
       totalLiters: acc.totalLiters + parseFloat(r.liters),
       totalPix: acc.totalPix + parseFloat(r.reward_brl),
     }),
-    { totalLiters: 0, totalPix: 0 }
+    { totalLiters: 0, totalPix: 0 },
   );
 }
 
@@ -128,33 +128,25 @@ export async function getMyStats(operatorKey: string): Promise<CollectionStats> 
 }
 
 export async function getCollectionHistory(operatorKey: string): Promise<CollectionHistoryItem[]> {
-  // Some environments use `created_at` instead of `collected_at` on `oil_collections`.
-  // Try `collected_at` first (requested), then fall back to `created_at` to avoid 500s.
-  const base = table().select("*").eq("operator_key", operatorKey);
-  const first = await base.order("collected_at", { ascending: false });
-  const second = first.error ? await base.order("created_at", { ascending: false }) : first;
+  const { data, error } = await (supabase as any)
+    .from("oil_collections")
+    .select("*")
+    .eq("operator_key", operatorKey)
+    .order("collected_at", { ascending: false });
 
-  const { data, error } = second;
   if (error || !data) return [];
 
   const fmtMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-  return (data as any[]).map((r) => {
-    const liters = typeof r.liters === "number" ? r.liters : parseFloat(String(r.liters ?? 0));
-    const reward = typeof r.reward_brl === "number" ? r.reward_brl : parseFloat(String(r.reward_brl ?? 0));
-    const rawDate = r.collected_at ?? r.created_at ?? null;
-    const collected = rawDate ? new Date(rawDate).toLocaleDateString("pt-BR") : "—";
-
-    return {
-      citizen_phone: formatPhoneBr(String(r.citizen_phone ?? "")),
-      reward_brl: fmtMoney.format(isNaN(reward) ? 0 : reward),
-      collected_at: collected,
-      liters: isNaN(liters) ? 0 : liters,
-      photo_url: (r.photo_url ?? null) as string | null,
-      tx_hash: (r.tx_hash ?? null) as string | null,
-      pix_status: (r.pix_status ?? null) as string | null,
-    };
-  });
+  return (data as any[]).map((r) => ({
+    citizen_phone: formatPhoneBr(String(r.citizen_phone ?? "")),
+    reward_brl: fmtMoney.format(Number(r.reward_brl ?? 0)),
+    collected_at: new Date(String(r.collected_at)).toLocaleDateString("pt-BR"),
+    liters: Number(r.liters ?? 0),
+    photo_url: r.photo_url ?? null,
+    tx_hash: r.tx_hash ?? null,
+    pix_status: r.pix_status ?? null,
+  }));
 }
 
 export async function getGlobalStats(): Promise<CollectionStats> {
