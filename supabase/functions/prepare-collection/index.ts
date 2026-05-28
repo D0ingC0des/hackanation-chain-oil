@@ -5,6 +5,7 @@ import {
   PublicKey,
   TransactionInstruction,
   SystemProgram,
+  Keypair,
 } from "npm:@solana/web3.js@1";
 import {
   getAssociatedTokenAddressSync,
@@ -80,10 +81,10 @@ Deno.serve(async (req) => {
     const rewardBrl = parseFloat((liters * rate).toFixed(2));
 
     const collectionId = inputId ?? crypto.randomUUID();
-    const treasuryPubkeyStr = Deno.env.get("TREASURY_PUBKEY");
-    if (!treasuryPubkeyStr) throw new Error("TREASURY_PUBKEY não configurada");
-
-    const treasuryPubkey = new PublicKey(treasuryPubkeyStr);
+    const keypairEnv = Deno.env.get("TREASURY_KEYPAIR");
+    if (!keypairEnv) throw new Error("TREASURY_KEYPAIR não configurada");
+    const treasury = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(keypairEnv)));
+    const treasuryPubkey = treasury.publicKey;
     const operatorPubkey = new PublicKey(operatorKey);
 
     // Pré-inserir registro (pix_status: "preparing")

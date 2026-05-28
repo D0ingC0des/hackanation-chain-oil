@@ -47,11 +47,12 @@ const WALLETS = [
 
 function LoginPage() {
   const navigate = useNavigate();
-  const { wallets, select, connect, connecting, connected, publicKey } = useWallet();
+  const { wallets, wallet, select, connect, connecting, connected, publicKey } = useWallet();
   const { rate } = useRate();
   const [showInstallGuide, setShowInstallGuide] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [pendingConnect, setPendingConnect] = useState(false);
 
   const features = [
     {
@@ -74,6 +75,13 @@ function LoginPage() {
     if (connecting || connected) setError("");
   }, [connecting, connected]);
 
+  // connect() só pode ser chamado APÓS select() propagar no contexto React
+  useEffect(() => {
+    if (!pendingConnect || !wallet) return;
+    setPendingConnect(false);
+    connect().catch(() => setError("Não foi possível conectar. Tente novamente."));
+  }, [pendingConnect, wallet, connect]);
+
   useEffect(() => {
     if (connected && publicKey) {
       getProfile(publicKey.toBase58()).then((profile) => {
@@ -83,19 +91,15 @@ function LoginPage() {
     }
   }, [connected, publicKey, navigate]);
 
-  async function handleConnect() {
+  function handleConnect() {
     setError("");
     if (!hasWallet) {
       setShowInstallGuide(true);
       return;
     }
-    try {
-      if (!wallets[0]) return;
-      select(installedWallets[0].adapter.name);
-      await connect();
-    } catch {
-      setError("Não foi possível conectar. Tente novamente.");
-    }
+    if (!installedWallets[0]) return;
+    select(installedWallets[0].adapter.name);
+    setPendingConnect(true);
   }
 
   return (
@@ -202,14 +206,10 @@ function LoginPage() {
                     <button
                       key={w.adapter.name}
                       type="button"
-                      onClick={async () => {
+                      onClick={() => {
                         setError("");
-                        try {
-                          select(w.adapter.name);
-                          await connect();
-                        } catch {
-                          setError("Não foi possível conectar. Tente novamente.");
-                        }
+                        select(w.adapter.name);
+                        setPendingConnect(true);
                       }}
                       className="w-full h-12 flex items-center gap-3 px-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition font-semibold text-sm"
                     >

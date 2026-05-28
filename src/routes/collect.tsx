@@ -55,7 +55,7 @@ function CollectPage() {
       <BlurredHeroBg />
       <MobileShell transparentBg>
         {/* ── Mobile header ── */}
-        <header className="lg:hidden px-5 pt-6 pb-4 flex items-center justify-between bg-gradient-hero">
+        <header className="lg:hidden px-5 pt-6 pb-4 flex items-center justify-between bg-background/90 backdrop-blur-sm border-b border-border">
           <Link
             to="/"
             className="size-10 rounded-full bg-card border border-border flex items-center justify-center shadow-soft"
