@@ -168,9 +168,7 @@ function ProfilePage() {
               <ProfileRow icon={Mail} label="E-mail" value={profile.email} />
               <ProfileRow icon={Phone} label="Celular" value={profile.phone} />
               <ProfileRow icon={Building2} label="Estabelecimento" value={profile.business_name} />
-              {profile.cnpj && (
-                <ProfileRow icon={Hash} label="CNPJ" value={profile.cnpj} />
-              )}
+              {profile.cnpj && <ProfileRow icon={Hash} label="CNPJ" value={profile.cnpj} />}
               <ProfileRow
                 icon={MapPin}
                 label="Localização"
@@ -180,12 +178,9 @@ function ProfilePage() {
               />
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              Perfil não encontrado.
-            </p>
+            <p className="text-sm text-muted-foreground text-center py-4">Perfil não encontrado.</p>
           )}
         </section>
-
       </div>
     </div>
   );

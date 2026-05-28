@@ -227,7 +227,6 @@ function CollectPage() {
             </div>
           </div>
         </div>
-
       </MobileShell>
     </div>
   );

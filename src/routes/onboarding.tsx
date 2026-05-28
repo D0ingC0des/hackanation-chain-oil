@@ -34,7 +34,10 @@ function maskCnpj(v: string) {
 }
 
 function maskCep(v: string) {
-  return v.replace(/\D/g, "").replace(/^(\d{5})(\d)/, "$1-$2").slice(0, 9);
+  return v
+    .replace(/\D/g, "")
+    .replace(/^(\d{5})(\d)/, "$1-$2")
+    .slice(0, 9);
 }
 
 interface FormState {
@@ -254,9 +257,7 @@ function OnboardingPage() {
             </div>
           )}
 
-          {error && (
-            <p className="text-sm text-destructive text-center">{error}</p>
-          )}
+          {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
           <button
             type="submit"

@@ -74,9 +74,11 @@ function HelpPage() {
             <div className="p-5 lg:p-6">
               <h2 className="text-xl lg:text-2xl font-extrabold tracking-tight">Como funciona</h2>
               <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-                O ChainOil é um app para <span className="font-semibold text-foreground">coleta de óleo usado</span>.
-                Você leva o óleo de cozinha (já utilizado) até um parceiro. O parceiro registra os litros no app e a
-                recompensa pode ser enviada na hora, enquanto o impacto ambiental da coleta fica contabilizado.
+                O ChainOil é um app para{" "}
+                <span className="font-semibold text-foreground">coleta de óleo usado</span>. Você
+                leva o óleo de cozinha (já utilizado) até um parceiro. O parceiro registra os litros
+                no app e a recompensa pode ser enviada na hora, enquanto o impacto ambiental da
+                coleta fica contabilizado.
               </p>
 
               <Separator className="my-4" />
@@ -123,10 +125,15 @@ function HelpPage() {
           {/* FAQ */}
           <Card className="rounded-3xl border-border shadow-soft">
             <div className="p-5 lg:p-6">
-              <h2 className="text-lg lg:text-xl font-extrabold tracking-tight">Perguntas frequentes (FAQ)</h2>
+              <h2 className="text-lg lg:text-xl font-extrabold tracking-tight">
+                Perguntas frequentes (FAQ)
+              </h2>
               <div className="mt-4 space-y-3">
                 {FAQ.map((item) => (
-                  <div key={item.q} className="rounded-2xl bg-secondary/40 border border-border px-4 py-3">
+                  <div
+                    key={item.q}
+                    className="rounded-2xl bg-secondary/40 border border-border px-4 py-3"
+                  >
                     <p className="text-sm font-semibold">{item.q}</p>
                     <p className="mt-1 text-sm text-muted-foreground leading-relaxed">{item.a}</p>
                   </div>
@@ -151,15 +158,7 @@ function HelpPage() {
   );
 }
 
-function Step({
-  icon: Icon,
-  title,
-  desc,
-}: {
-  icon: typeof Droplets;
-  title: string;
-  desc: string;
-}) {
+function Step({ icon: Icon, title, desc }: { icon: typeof Droplets; title: string; desc: string }) {
   return (
     <div className="rounded-3xl bg-card border border-border p-4 shadow-soft">
       <div className="size-10 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -170,4 +169,3 @@ function Step({
     </div>
   );
 }
-

@@ -1,15 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { AnchorProvider, Program, BN, web3 } from "@coral-xyz/anchor";
 import { PublicKey, Connection } from "@solana/web3.js";
 import type { AnchorWallet } from "@solana/wallet-adapter-react";
 
 // Feed SOL/USD Devnet — https://docs.chain.link/data-feeds/price-feeds/addresses?network=solana
-export const SOL_USD_DEVNET = new PublicKey(
-  "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR",
-);
+export const SOL_USD_DEVNET = new PublicKey("99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR");
 
-const PROGRAM_ID = new PublicKey(
-  "DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh",
-);
+const PROGRAM_ID = new PublicKey("DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh");
 
 const RPC = "https://api.devnet.solana.com";
 
@@ -17,7 +15,7 @@ export interface RegisterCollectionOnChainParams {
   wallet: AnchorWallet;
   /** UUID do Supabase como string (ex: "550e8400-e29b-41d4-a716-446655440000") */
   supabaseId: string;
-  litersML: number;       // litros × 1000 (2.5L → 2500)
+  litersML: number; // litros × 1000 (2.5L → 2500)
   rewardCentavos: number; // BRL × 100 (R$3,00 → 300)
 }
 
@@ -39,8 +37,6 @@ export async function registerCollectionOnChain(
   const connection = new Connection(RPC, "confirmed");
   const provider = new AnchorProvider(connection, wallet, { commitment: "confirmed" });
 
-  // IDL gerado por `anchor build` — o stub em /anchor/target/idl/ é substituído pelo build real
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let idl: any;
   try {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -58,11 +54,10 @@ export async function registerCollectionOnChain(
 
   let seq = BigInt(0);
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const state = await (program.account as any).operatorState.fetch(operatorState);
     seq = BigInt(state.totalCollections.toString());
   } catch {
-    // primeira coleta do operador
+    console.log("Primeira coleta do operador");
   }
 
   const seqBuf = Buffer.alloc(8);
@@ -73,7 +68,6 @@ export async function registerCollectionOnChain(
     PROGRAM_ID,
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tx = await (program.methods as any)
     .registerCollection({
       litersMl: new BN(litersML),

@@ -14,14 +14,10 @@ const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN as string | undefined;
 const SESSION_KEY = "chainoil_admin_auth";
 
 function AdminPage() {
-  const [authed, setAuthed] = useState(
-    () => sessionStorage.getItem(SESSION_KEY) === "1"
-  );
+  const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
 
   if (!ADMIN_PIN) {
-    return (
-      <Blocked message="Acesso administrativo não configurado neste ambiente." />
-    );
+    return <Blocked message="Acesso administrativo não configurado neste ambiente." />;
   }
 
   if (!authed) {
@@ -95,14 +91,11 @@ function RateDashboard() {
               <>
                 <p className="text-3xl font-bold">
                   R$ {config ? parseFloat(config.value).toFixed(2) : "—"}
-                  <span className="text-sm font-normal text-muted-foreground ml-2">
-                    / litro
-                  </span>
+                  <span className="text-sm font-normal text-muted-foreground ml-2">/ litro</span>
                 </p>
                 {config?.updated_at && (
                   <p className="text-[11px] text-muted-foreground mt-1">
-                    Atualizado em{" "}
-                    {new Date(config.updated_at).toLocaleString("pt-BR")}
+                    Atualizado em {new Date(config.updated_at).toLocaleString("pt-BR")}
                   </p>
                 )}
               </>
@@ -159,13 +152,7 @@ function RateDashboard() {
   );
 }
 
-function PinGate({
-  correctPin,
-  onSuccess,
-}: {
-  correctPin: string;
-  onSuccess: () => void;
-}) {
+function PinGate({ correctPin, onSuccess }: { correctPin: string; onSuccess: () => void }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
 
@@ -199,9 +186,7 @@ function PinGate({
           placeholder="PIN de acesso"
           className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/40"
         />
-        {error && (
-          <p className="text-xs text-destructive text-center">PIN incorreto.</p>
-        )}
+        {error && <p className="text-xs text-destructive text-center">PIN incorreto.</p>}
         <button
           type="submit"
           disabled={!pin}

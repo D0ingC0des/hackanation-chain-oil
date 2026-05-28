@@ -21,13 +21,13 @@ const admin = createClient(url, svc, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const PHONE_RAW   = "44988887777";
+const PHONE_RAW = "44988887777";
 const PHONE_FORMATTED = "(44) 98888-7777";
-const PIN         = "1234";
-const EMAIL       = `${PHONE_RAW}@chainoil.local`;
-const PASSWORD    = `co_${PIN}_oil`;
-const FULL_NAME   = "teste_user";
-const DEMO_POINT  = "00000000-0000-0000-0000-000000000001";
+const PIN = "1234";
+const EMAIL = `${PHONE_RAW}@chainoil.local`;
+const PASSWORD = `co_${PIN}_oil`;
+const FULL_NAME = "teste_user";
+const DEMO_POINT = "00000000-0000-0000-0000-000000000001";
 
 async function run() {
   console.log("\n🌱  Seed: usuário demo ChainOil\n");
@@ -42,7 +42,10 @@ async function run() {
   if (found) {
     console.log(`   ℹ️   Usuário já existe (${found.id}) — atualizando senha`);
     const { error } = await admin.auth.admin.updateUserById(found.id, { password: PASSWORD });
-    if (error) { console.error("   ❌  updateUser:", error.message); process.exit(1); }
+    if (error) {
+      console.error("   ❌  updateUser:", error.message);
+      process.exit(1);
+    }
     userId = found.id;
     console.log("   ✅  Senha atualizada");
   } else {
@@ -51,7 +54,10 @@ async function run() {
       password: PASSWORD,
       email_confirm: true,
     });
-    if (error) { console.error("   ❌  createUser:", error.message); process.exit(1); }
+    if (error) {
+      console.error("   ❌  createUser:", error.message);
+      process.exit(1);
+    }
     userId = data.user.id;
     console.log(`   ✅  Criado: ${userId}`);
   }
@@ -65,9 +71,12 @@ async function run() {
       phone: PHONE_RAW,
       role: "operator",
     },
-    { onConflict: "id" }
+    { onConflict: "id" },
   );
-  if (profErr) { console.error("   ❌  profile:", profErr.message); process.exit(1); }
+  if (profErr) {
+    console.error("   ❌  profile:", profErr.message);
+    process.exit(1);
+  }
   console.log("   ✅  Profile upserted");
 
   // 3. Operator
@@ -84,7 +93,10 @@ async function run() {
       collection_point_id: DEMO_POINT,
       is_active: true,
     });
-    if (opErr) { console.error("   ❌  operator:", opErr.message); process.exit(1); }
+    if (opErr) {
+      console.error("   ❌  operator:", opErr.message);
+      process.exit(1);
+    }
     console.log("   ✅  Operator criado");
   } else {
     console.log(`   ℹ️   Operator já existe (${opExisting.id})`);
@@ -101,9 +113,12 @@ async function run() {
       level: 2,
       streak_days: 7,
     },
-    { onConflict: "citizen_id" }
+    { onConflict: "citizen_id" },
   );
-  if (rankErr) { console.error("   ❌  ranking:", rankErr.message); process.exit(1); }
+  if (rankErr) {
+    console.error("   ❌  ranking:", rankErr.message);
+    process.exit(1);
+  }
   console.log("   ✅  Ranking seedado (248L, Prata)");
 
   // ── resultado ────────────────────────────────────────────
@@ -115,4 +130,7 @@ async function run() {
   console.log(`   Auth ID  : ${userId}\n`);
 }
 
-run().catch((e) => { console.error("Erro inesperado:", e); process.exit(1); });
+run().catch((e) => {
+  console.error("Erro inesperado:", e);
+  process.exit(1);
+});

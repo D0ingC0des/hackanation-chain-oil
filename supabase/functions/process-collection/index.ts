@@ -14,7 +14,7 @@ interface ProcessInput {
   operatorKey: string;
   citizenPhone: string; // chave PIX (telefone) do cidadão
   liters: number;
-  txHash?: string;     // assinatura da tx on-chain (Anchor)
+  txHash?: string; // assinatura da tx on-chain (Anchor)
   collectionId?: string; // UUID gerado no front para cross-ref com PDA
 }
 
@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { operatorKey, citizenPhone, liters, txHash, collectionId }: ProcessInput = await req.json();
+    const { operatorKey, citizenPhone, liters, txHash, collectionId }: ProcessInput =
+      await req.json();
 
     if (!operatorKey || !liters || liters <= 0) {
       return json({ success: false, error: "operatorKey e liters são obrigatórios" }, 400);
@@ -77,7 +78,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": wooviToken,
+          Authorization: wooviToken,
         },
         body: JSON.stringify({
           value: Math.round(rewardBrl * 100), // valor em centavos

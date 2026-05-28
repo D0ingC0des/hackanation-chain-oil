@@ -41,8 +41,8 @@ describe("chain-oil", () => {
 
     const tx = await program.methods
       .registerCollection({
-        litersMl: new anchor.BN(2500),      // 2.5 L
-        rewardCentavos: new anchor.BN(300),  // R$ 3,00
+        litersMl: new anchor.BN(2500), // 2.5 L
+        rewardCentavos: new anchor.BN(300), // R$ 3,00
         supabaseId,
       })
       .accounts({

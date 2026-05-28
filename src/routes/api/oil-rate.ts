@@ -8,10 +8,7 @@ export const Route = createFileRoute("/api/oil-rate")({
         const config = await getRateConfig();
 
         if (!config) {
-          return Response.json(
-            { error: "Rate not configured" },
-            { status: 404 }
-          );
+          return Response.json({ error: "Rate not configured" }, { status: 404 });
         }
 
         return new Response(
@@ -29,7 +26,7 @@ export const Route = createFileRoute("/api/oil-rate")({
               "Access-Control-Allow-Methods": "GET, OPTIONS",
               "Cache-Control": "no-store",
             },
-          }
+          },
         );
       },
     },

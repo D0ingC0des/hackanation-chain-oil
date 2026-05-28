@@ -18,11 +18,12 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
         <h2 className="mt-4 text-xl font-semibold">Página não encontrada</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Essa página não existe ou foi movida.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">Essa página não existe ou foi movida.</p>
         <div className="mt-6">
-          <Link to="/" className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">
+          <Link
+            to="/"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
+          >
             Voltar ao início
           </Link>
         </div>
@@ -41,7 +42,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">Tente novamente em instantes.</p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground"
           >
             Tentar novamente
@@ -59,21 +63,44 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { name: "theme-color", content: "#15803D" },
       { title: "ChainOil — Recicle óleo, ganhe na hora" },
-      { name: "description", content: "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas." },
+      {
+        name: "description",
+        content:
+          "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas.",
+      },
       { property: "og:title", content: "ChainOil — Recicle óleo, ganhe na hora" },
-      { property: "og:description", content: "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas." },
+      {
+        property: "og:description",
+        content:
+          "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "ChainOil — Recicle óleo, ganhe na hora" },
-      { name: "twitter:description", content: "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/93b75e4d-0e29-4043-9442-a9f5794b8345/id-preview-7866b2bd--8fa7774f-a859-4b4a-8e4e-099a40a036e1.lovable.app-1779640100053.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/93b75e4d-0e29-4043-9442-a9f5794b8345/id-preview-7866b2bd--8fa7774f-a859-4b4a-8e4e-099a40a036e1.lovable.app-1779640100053.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/93b75e4d-0e29-4043-9442-a9f5794b8345/id-preview-7866b2bd--8fa7774f-a859-4b4a-8e4e-099a40a036e1.lovable.app-1779640100053.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/93b75e4d-0e29-4043-9442-a9f5794b8345/id-preview-7866b2bd--8fa7774f-a859-4b4a-8e4e-099a40a036e1.lovable.app-1779640100053.png",
+      },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -85,7 +112,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
