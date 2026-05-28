@@ -6,7 +6,9 @@ export function useRate() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getRatePerLiter().then(setRate).finally(() => setLoading(false));
+    getRatePerLiter()
+      .then(setRate)
+      .finally(() => setLoading(false));
   }, []);
 
   return { rate, loading };

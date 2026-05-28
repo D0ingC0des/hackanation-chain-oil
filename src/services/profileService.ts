@@ -35,27 +35,19 @@ export interface CreateProfileInput {
 const table = () => (supabase as any).from("wallet_profiles");
 
 export async function getProfile(publicKey: string): Promise<WalletProfile | null> {
-  const { data, error } = await table()
-    .select("*")
-    .eq("public_key", publicKey)
-    .maybeSingle();
+  const { data, error } = await table().select("*").eq("public_key", publicKey).maybeSingle();
 
   if (error || !data) return null;
   return data as WalletProfile;
 }
 
 export async function createProfile(input: CreateProfileInput): Promise<WalletProfile> {
-  const { data, error } = await table()
-    .insert(input)
-    .select()
-    .single();
+  const { data, error } = await table().insert(input).select().single();
 
   if (error || !data) throw error ?? new Error("Failed to create profile");
   return data as WalletProfile;
 }
 
 export async function touchWalletLogin(publicKey: string): Promise<void> {
-  await table()
-    .update({ updated_at: new Date().toISOString() })
-    .eq("public_key", publicKey);
+  await table().update({ updated_at: new Date().toISOString() }).eq("public_key", publicKey);
 }

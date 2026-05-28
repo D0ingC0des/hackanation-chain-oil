@@ -2,14 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { MobileShell } from "@/components/MobileShell";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useDashboard } from "@/hooks/use-dashboard";
-import {
-  ChevronLeft,
-  Droplets,
-  Leaf,
-  Loader2,
-  Plus,
-  TrendingUp,
-} from "lucide-react";
+import { ChevronLeft, Droplets, Leaf, Loader2, Plus, TrendingUp } from "lucide-react";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 
 export const Route = createFileRoute("/dashboard")({

@@ -6,7 +6,11 @@ import { Transaction } from "@solana/web3.js";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Logo } from "@/components/Logo";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
-import { prepareCollection, processCollection, uploadCollectionPhoto } from "@/services/collection-service";
+import {
+  prepareCollection,
+  processCollection,
+  uploadCollectionPhoto,
+} from "@/services/collection-service";
 import { useRate } from "@/hooks/use-rate";
 
 export const Route = createFileRoute("/processing")({
@@ -71,7 +75,10 @@ function ProcessingPage() {
         const txBytes = Uint8Array.from(atob(txBase64), (c) => c.charCodeAt(0));
         const tx = Transaction.from(txBytes);
         const signedTx = await signTransaction(tx);
-        const signedBytes = signedTx.serialize({ requireAllSignatures: false, verifySignatures: false });
+        const signedBytes = signedTx.serialize({
+          requireAllSignatures: false,
+          verifySignatures: false,
+        });
         const signedBase64 = btoa(String.fromCharCode(...signedBytes));
 
         // Step 3: process — edge co-signs, submits, PIX

@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const table = () => (supabase as any).from("oil_collections");
 
 // ── Option B: prepare (build tx) ───────────────────────────────────────────
@@ -81,10 +82,11 @@ export async function uploadCollectionPhoto(
 
   if (uploadError) throw uploadError;
 
-  const { data: { publicUrl } } = supabase.storage
-    .from("collection-photos")
-    .getPublicUrl(path);
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from("collection-photos").getPublicUrl(path);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { error: updateError } = await (supabase as any)
     .from("oil_collections")
     .update({ photo_url: publicUrl })
@@ -125,7 +127,7 @@ function sumRows(rows: Array<{ liters: string; reward_brl: string }>): Collectio
       totalLiters: acc.totalLiters + parseFloat(r.liters),
       totalPix: acc.totalPix + parseFloat(r.reward_brl),
     }),
-    { totalLiters: 0, totalPix: 0 }
+    { totalLiters: 0, totalPix: 0 },
   );
 }
 

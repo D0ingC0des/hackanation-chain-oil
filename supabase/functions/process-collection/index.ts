@@ -1,9 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import {
-  Connection,
-  Transaction,
-  Keypair,
-} from "npm:@solana/web3.js@1";
+import { Connection, Transaction, Keypair } from "npm:@solana/web3.js@1";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -93,7 +89,7 @@ Deno.serve(async (req) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${wooviKey}`,
+          Authorization: `Bearer ${wooviKey}`,
         },
         body: JSON.stringify({
           value: Math.round(rewardBrl * 100),

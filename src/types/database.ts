@@ -80,7 +80,10 @@ export interface Database {
           validated_at: string | null;
           created_at: string;
         };
-        Insert: Omit<Database["public"]["Tables"]["collections"]["Row"], "id" | "collected_at" | "created_at">;
+        Insert: Omit<
+          Database["public"]["Tables"]["collections"]["Row"],
+          "id" | "collected_at" | "created_at"
+        >;
         Update: Partial<Database["public"]["Tables"]["collections"]["Insert"]>;
       };
       rewards: {

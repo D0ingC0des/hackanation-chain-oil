@@ -39,6 +39,6 @@ export default async function handler(_request: Request): Promise<Response> {
         "Access-Control-Allow-Methods": "GET, OPTIONS",
         "Cache-Control": "no-store",
       },
-    }
+    },
   );
 }

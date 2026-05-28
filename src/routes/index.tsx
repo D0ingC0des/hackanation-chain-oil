@@ -4,7 +4,17 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Logo } from "@/components/Logo";
 import { getProfile, touchWalletLogin } from "@/services/profileService";
 import { useRate } from "@/hooks/use-rate";
-import { ShieldCheck, Sparkles, Leaf, Droplets, Recycle, Zap, Wallet, ExternalLink, X } from "lucide-react";
+import {
+  ShieldCheck,
+  Sparkles,
+  Leaf,
+  Droplets,
+  Recycle,
+  Zap,
+  Wallet,
+  ExternalLink,
+  X,
+} from "lucide-react";
 import heroImg from "@/assets/hero-community.jpg";
 
 export const Route = createFileRoute("/")({
@@ -12,7 +22,10 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Entrar — ChainOil" },
-      { name: "description", content: "Conecte sua carteira Solana e comece a transformar óleo em renda e impacto." },
+      {
+        name: "description",
+        content: "Conecte sua carteira Solana e comece a transformar óleo em renda e impacto.",
+      },
     ],
   }),
 });
@@ -41,14 +54,20 @@ function LoginPage() {
   const [mounted, setMounted] = useState(false);
 
   const features = [
-    { icon: Zap, label: "PIX instantâneo", desc: `R$ ${rate.toFixed(2).replace(".", ",")} por litro direto na conta` },
+    {
+      icon: Zap,
+      label: "PIX instantâneo",
+      desc: `R$ ${rate.toFixed(2).replace(".", ",")} por litro direto na conta`,
+    },
     ...STATIC_FEATURES,
   ];
 
   useEffect(() => setMounted(true), []);
 
   // Wallet detection only runs client-side — gate behind mounted to avoid SSR mismatch
-  const installedWallets = mounted ? wallets.filter((w) => w.readyState === "Installed" && w.adapter.name === "Phantom") : [];
+  const installedWallets = mounted
+    ? wallets.filter((w) => w.readyState === "Installed" && w.adapter.name === "Phantom")
+    : [];
   const hasWallet = installedWallets.length > 0;
 
   useEffect(() => {
@@ -81,7 +100,6 @@ function LoginPage() {
 
   return (
     <main className="min-h-screen flex flex-col lg:flex-row">
-
       {/* ── LEFT: hero marketing (desktop only) ── */}
       <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between bg-gradient-hero px-14 py-12">
         <Logo />
@@ -92,11 +110,13 @@ function LoginPage() {
             +12.480 litros reciclados este mês
           </div>
           <h1 className="text-5xl font-extrabold tracking-tight leading-tight">
-            Recicle óleo.<br />
+            Recicle óleo.
+            <br />
             <span className="text-primary">Receba na hora.</span>
           </h1>
           <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
-            Conectamos parceiros locais a cidadãos que transformam óleo de cozinha usado em renda e impacto ambiental real.
+            Conectamos parceiros locais a cidadãos que transformam óleo de cozinha usado em renda e
+            impacto ambiental real.
           </p>
 
           <div className="mt-10 space-y-4">
@@ -130,7 +150,6 @@ function LoginPage() {
 
       {/* ── RIGHT: connect panel ── */}
       <div className="flex flex-col flex-1 bg-background lg:max-w-[480px] lg:border-l lg:border-border">
-
         {/* Mobile-only header */}
         <div className="lg:hidden bg-gradient-hero">
           <div className="px-5 pt-8 pb-4">
@@ -146,13 +165,16 @@ function LoginPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-foreground/40 to-transparent" />
               <div className="absolute bottom-4 left-4 right-4 flex items-center gap-2 text-primary-foreground">
                 <Sparkles className="size-4" />
-                <span className="text-xs font-semibold tracking-wide">+12.480 litros reciclados este mês</span>
+                <span className="text-xs font-semibold tracking-wide">
+                  +12.480 litros reciclados este mês
+                </span>
               </div>
             </div>
           </section>
           <section className="px-5 pb-6">
             <h1 className="text-3xl font-extrabold tracking-tight leading-tight">
-              Recicle óleo.<br />
+              Recicle óleo.
+              <br />
               <span className="text-primary">Receba na hora.</span>
             </h1>
             <p className="mt-2 text-muted-foreground text-[15px]">
@@ -166,7 +188,9 @@ function LoginPage() {
           <div className="hidden lg:block mb-8">
             <Logo />
             <h2 className="mt-6 text-2xl font-extrabold tracking-tight">Entrar na plataforma</h2>
-            <p className="mt-1 text-muted-foreground text-sm">Conecte sua carteira Solana para continuar.</p>
+            <p className="mt-1 text-muted-foreground text-sm">
+              Conecte sua carteira Solana para continuar.
+            </p>
           </div>
 
           {!showInstallGuide ? (
@@ -190,7 +214,11 @@ function LoginPage() {
                       className="w-full h-14 flex items-center gap-3 px-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition font-semibold text-sm"
                     >
                       {w.adapter.icon && (
-                        <img src={w.adapter.icon} alt={w.adapter.name} className="size-6 rounded-lg" />
+                        <img
+                          src={w.adapter.icon}
+                          alt={w.adapter.name}
+                          className="size-6 rounded-lg"
+                        />
                       )}
                       <span className="flex-1 text-left">Conectar {w.adapter.name}</span>
                       <Wallet className="size-4 text-muted-foreground" />
@@ -210,9 +238,7 @@ function LoginPage() {
                 {connecting ? "Conectando…" : hasWallet ? "Conectar carteira" : "Instalar carteira"}
               </button>
 
-              {error && (
-                <p className="text-sm text-destructive text-center">{error}</p>
-              )}
+              {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
               <div className="flex items-center justify-center gap-2 pt-2 text-xs text-muted-foreground">
                 <ShieldCheck className="size-4 text-primary" />
@@ -233,7 +259,8 @@ function LoginPage() {
                 </button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Uma carteira Solana é necessária para acessar a plataforma. É gratuita e leva menos de 2 minutos para criar.
+                Uma carteira Solana é necessária para acessar a plataforma. É gratuita e leva menos
+                de 2 minutos para criar.
               </p>
 
               {WALLETS.map((w) => (

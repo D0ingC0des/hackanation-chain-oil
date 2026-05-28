@@ -54,8 +54,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   try {
-    const { operatorKey, liters, citizenPhone, collectionId: inputId }: PrepareInput =
-      await req.json();
+    const {
+      operatorKey,
+      liters,
+      citizenPhone,
+      collectionId: inputId,
+    }: PrepareInput = await req.json();
 
     if (!operatorKey || !liters || liters <= 0) {
       return json({ success: false, error: "operatorKey e liters são obrigatórios" }, 400);
@@ -114,7 +118,9 @@ Deno.serve(async (req) => {
     tx.feePayer = treasuryPubkey;
 
     // 1. Criar ATA do operador para COT (idempotente)
-    tx.add(makeCreateAtaIdempotentInstruction(treasuryPubkey, operatorAta, operatorPubkey, COT_MINT));
+    tx.add(
+      makeCreateAtaIdempotentInstruction(treasuryPubkey, operatorAta, operatorPubkey, COT_MINT),
+    );
 
     // 2. Memo de atestação — operador precisa assinar
     tx.add(

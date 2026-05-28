@@ -200,9 +200,7 @@ function CollectPage() {
                   </div>
                   <div>
                     <div className="text-sm font-bold">{co2}kg CO₂ evitado</div>
-                    <div className="text-xs text-muted-foreground">
-                      {liters * 3} dias de carro
-                    </div>
+                    <div className="text-xs text-muted-foreground">{liters * 3} dias de carro</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -227,7 +225,6 @@ function CollectPage() {
             </div>
           </div>
         </div>
-
       </MobileShell>
     </div>
   );
