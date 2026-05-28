@@ -4,13 +4,9 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  HeadContent,
-  Scripts,
 } from "@tanstack/react-router";
 import { Toaster } from "@/components/ui/sonner";
 import { SolanaWalletProvider } from "@/lib/wallet-provider";
-
-import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
   return (
@@ -53,46 +49,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
-    meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#15803D" },
-      { title: "ChainOil — Recicle óleo, ganhe na hora" },
-      { name: "description", content: "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas." },
-      { property: "og:title", content: "ChainOil — Recicle óleo, ganhe na hora" },
-      { property: "og:description", content: "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "ChainOil — Recicle óleo, ganhe na hora" },
-      { name: "twitter:description", content: "Troque óleo de cozinha usado por PIX instantâneo e impacto ambiental real. Parceiros ChainOil em mercados, igrejas e escolas." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/93b75e4d-0e29-4043-9442-a9f5794b8345/id-preview-7866b2bd--8fa7774f-a859-4b4a-8e4e-099a40a036e1.lovable.app-1779640100053.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/93b75e4d-0e29-4043-9442-a9f5794b8345/id-preview-7866b2bd--8fa7774f-a859-4b4a-8e4e-099a40a036e1.lovable.app-1779640100053.png" },
-    ],
-    links: [
-      { rel: "stylesheet", href: appCss },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" },
-    ],
-  }),
-  shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
   errorComponent: ErrorComponent,
 });
-
-function RootShell({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="pt-BR">
-      <head><HeadContent /></head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
