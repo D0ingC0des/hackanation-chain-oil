@@ -101,7 +101,7 @@ function LoginPage() {
   return (
     <main className="min-h-screen flex flex-col lg:flex-row">
       {/* ── LEFT: hero marketing (desktop only) ── */}
-      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between bg-gradient-hero px-14 py-12">
+      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between bg-gradient-hero px-12 py-8">
         <Logo />
 
         <div className="max-w-md">
@@ -109,17 +109,17 @@ function LoginPage() {
             <Sparkles className="size-3.5" />
             +12.480 litros reciclados este mês
           </div>
-          <h1 className="text-5xl font-extrabold tracking-tight leading-tight">
+          <h1 className="text-4xl font-extrabold tracking-tight leading-tight">
             Recicle óleo.
             <br />
             <span className="text-primary">Receba na hora.</span>
           </h1>
-          <p className="mt-4 text-muted-foreground text-lg leading-relaxed">
+          <p className="mt-3 text-muted-foreground text-base leading-relaxed">
             Conectamos parceiros locais a cidadãos que transformam óleo de cozinha usado em renda e
             impacto ambiental real.
           </p>
 
-          <div className="mt-10 space-y-4">
+          <div className="mt-6 space-y-3">
             {features.map(({ icon: Icon, label, desc }) => (
               <div key={label} className="flex items-center gap-4">
                 <div className="size-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -134,7 +134,7 @@ function LoginPage() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl shadow-elevated aspect-[16/9]">
+        <div className="relative overflow-hidden rounded-3xl shadow-elevated aspect-[16/6]">
           <img
             src={heroImg}
             alt="Comunidade trocando óleo de cozinha por recompensa digital"
@@ -184,10 +184,10 @@ function LoginPage() {
         </div>
 
         {/* Connect form */}
-        <div className="flex flex-col flex-1 justify-center px-5 lg:px-12 py-8">
-          <div className="hidden lg:block mb-8">
+        <div className="flex flex-col flex-1 justify-center px-5 lg:px-12 py-5">
+          <div className="hidden lg:block mb-6">
             <Logo />
-            <h2 className="mt-6 text-2xl font-extrabold tracking-tight">Entrar na plataforma</h2>
+            <h2 className="mt-4 text-2xl font-extrabold tracking-tight">Entrar na plataforma</h2>
             <p className="mt-1 text-muted-foreground text-sm">
               Conecte sua carteira Solana para continuar.
             </p>
@@ -211,7 +211,7 @@ function LoginPage() {
                           setError("Não foi possível conectar. Tente novamente.");
                         }
                       }}
-                      className="w-full h-14 flex items-center gap-3 px-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition font-semibold text-sm"
+                      className="w-full h-12 flex items-center gap-3 px-4 rounded-2xl bg-card border border-border hover:border-primary/50 transition font-semibold text-sm"
                     >
                       {w.adapter.icon && (
                         <img
@@ -232,7 +232,7 @@ function LoginPage() {
                 type="button"
                 onClick={handleConnect}
                 disabled={connecting}
-                className="w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-soft active:scale-[0.98] transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full h-12 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-soft active:scale-[0.98] transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 <Wallet className="size-5" />
                 {connecting ? "Conectando…" : hasWallet ? "Conectar carteira" : "Instalar carteira"}

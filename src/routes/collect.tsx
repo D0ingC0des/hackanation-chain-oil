@@ -67,7 +67,7 @@ function CollectPage() {
         </header>
 
         {/* ── Desktop header ── */}
-        <div className="hidden lg:block px-8 pt-4 pb-1">
+        <div className="hidden lg:block px-8 pt-8 pb-1">
           <h1 className="text-2xl font-extrabold tracking-tight">Nova coleta</h1>
           <p className="text-foreground/80 text-sm mt-0.5">
             Registre o óleo coletado e gere a recompensa instantânea.
@@ -75,11 +75,11 @@ function CollectPage() {
         </div>
 
         {/* ── Two-column on desktop ── */}
-        <div className="lg:grid lg:grid-cols-[1fr_360px] lg:gap-5 lg:px-8 lg:pt-3">
+        <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-8 lg:px-8 lg:pt-6">
           {/* LEFT: form */}
           <div className="px-5 lg:px-0 pt-2 lg:pt-0 space-y-3">
             {/* Phone */}
-            <div className="bg-card rounded-3xl p-3 lg:p-3 shadow-soft border border-border">
+            <div className="bg-card rounded-3xl p-4 shadow-soft border border-border">
               <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <User className="size-3.5" /> Celular do cidadão
               </label>
@@ -94,7 +94,7 @@ function CollectPage() {
             </div>
 
             {/* Liters */}
-            <div className="bg-card rounded-3xl p-3 shadow-soft border border-border">
+            <div className="bg-card rounded-3xl p-4 shadow-soft border border-border">
               <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <Droplet className="size-3.5" /> Litros coletados
               </label>
@@ -102,7 +102,7 @@ function CollectPage() {
                 <button
                   type="button"
                   onClick={() => setLiters((l) => Math.max(0, +(l - 0.5).toFixed(1)))}
-                  className="size-12 rounded-2xl bg-secondary text-2xl font-bold active:scale-95 transition"
+                  className="size-14 rounded-2xl bg-secondary text-2xl font-bold active:scale-95 transition"
                   aria-label="Diminuir"
                 >
                   −
@@ -116,7 +116,7 @@ function CollectPage() {
                 <button
                   type="button"
                   onClick={() => setLiters((l) => +(l + 0.5).toFixed(1))}
-                  className="size-12 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold active:scale-95 transition"
+                  className="size-14 rounded-2xl bg-primary text-primary-foreground text-2xl font-bold active:scale-95 transition"
                   aria-label="Aumentar"
                 >
                   +
@@ -128,7 +128,7 @@ function CollectPage() {
                     key={v}
                     type="button"
                     onClick={() => setLiters(v)}
-                    className={`h-9 rounded-xl text-sm font-semibold border transition ${
+                    className={`h-10 rounded-xl text-sm font-semibold border transition ${
                       liters === v
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-secondary border-border text-foreground"
@@ -173,7 +173,7 @@ function CollectPage() {
 
           {/* RIGHT: desktop reward preview + CTA (sticky) */}
           <div className="hidden lg:flex lg:flex-col">
-            <div className="sticky top-20 space-y-3">
+            <div className="sticky top-24 space-y-4">
               {/* Reward card */}
               <div className="rounded-3xl p-4 bg-gradient-reward shadow-reward text-reward-foreground">
                 <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-2">
@@ -218,7 +218,7 @@ function CollectPage() {
               <button
                 disabled={!canSubmit}
                 onClick={handleConfirm}
-                className="w-full h-12 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-elevated hover:opacity-90 active:scale-[0.98] transition disabled:opacity-50"
+                className="w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-elevated hover:opacity-90 active:scale-[0.98] transition disabled:opacity-50"
               >
                 Confirmar coleta • R$ {reward}
               </button>
