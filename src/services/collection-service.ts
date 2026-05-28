@@ -78,6 +78,25 @@ export interface CollectionStats {
   totalPix: number;
 }
 
+function formatPhoneBr(value: string) {
+  const d = value.replace(/\D/g, "").slice(0, 11);
+  if (d.length < 10) return "(--) ----- ----";
+  const ddd = d.slice(0, 2);
+  const prefix = d.length === 11 ? d.slice(2, 7) : d.slice(2, 6);
+  const suffix = d.length === 11 ? d.slice(7, 11) : d.slice(6, 10);
+  return `(${ddd}) ${prefix}-${suffix}`;
+}
+
+export interface CollectionHistoryItem {
+  citizen_phone: string; // formatted (never raw)
+  reward_brl: string; // formatted currency
+  collected_at: string; // formatted date
+  liters: number;
+  photo_url: string | null;
+  tx_hash: string | null;
+  pix_status: string | null;
+}
+
 export async function saveCollection(input: CollectionInput): Promise<void> {
   const { error } = await table().insert({
     operator_key: input.operatorKey,
@@ -106,6 +125,33 @@ export async function getMyStats(operatorKey: string): Promise<CollectionStats> 
     .eq("operator_key", operatorKey);
   if (error || !data) return { totalLiters: 0, totalPix: 0 };
   return sumRows(data);
+}
+
+export async function getCollectionHistory(operatorKey: string): Promise<CollectionHistoryItem[]> {
+  const { data, error } = await table()
+    .select("citizen_phone, reward_brl, collected_at, liters, photo_url, tx_hash, pix_status")
+    .eq("operator_key", operatorKey)
+    .order("collected_at", { ascending: false });
+
+  if (error || !data) return [];
+
+  const fmtMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
+  return (data as any[]).map((r) => {
+    const liters = typeof r.liters === "number" ? r.liters : parseFloat(String(r.liters ?? 0));
+    const reward = typeof r.reward_brl === "number" ? r.reward_brl : parseFloat(String(r.reward_brl ?? 0));
+    const collected = r.collected_at ? new Date(r.collected_at).toLocaleDateString("pt-BR") : "—";
+
+    return {
+      citizen_phone: formatPhoneBr(String(r.citizen_phone ?? "")),
+      reward_brl: fmtMoney.format(isNaN(reward) ? 0 : reward),
+      collected_at: collected,
+      liters: isNaN(liters) ? 0 : liters,
+      photo_url: (r.photo_url ?? null) as string | null,
+      tx_hash: (r.tx_hash ?? null) as string | null,
+      pix_status: (r.pix_status ?? null) as string | null,
+    };
+  });
 }
 
 export async function getGlobalStats(): Promise<CollectionStats> {
