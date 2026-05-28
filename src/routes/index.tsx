@@ -101,11 +101,11 @@ function LoginPage() {
   return (
     <main className="min-h-screen flex flex-col lg:flex-row">
       {/* ── LEFT: hero marketing (desktop only) ── */}
-      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between bg-gradient-hero px-12 py-8">
+      <div className="hidden lg:flex lg:flex-1 lg:flex-col lg:justify-between bg-gradient-hero px-12 py-5">
         <Logo />
 
         <div className="max-w-md">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1.5 rounded-full text-xs font-semibold mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-semibold mb-3">
             <Sparkles className="size-3.5" />
             +12.480 litros reciclados este mês
           </div>
@@ -114,16 +114,16 @@ function LoginPage() {
             <br />
             <span className="text-primary">Receba na hora.</span>
           </h1>
-          <p className="mt-3 text-muted-foreground text-base leading-relaxed">
+          <p className="mt-2 text-muted-foreground text-sm leading-relaxed">
             Conectamos parceiros locais a cidadãos que transformam óleo de cozinha usado em renda e
             impacto ambiental real.
           </p>
 
-          <div className="mt-6 space-y-3">
+          <div className="mt-4 space-y-2">
             {features.map(({ icon: Icon, label, desc }) => (
-              <div key={label} className="flex items-center gap-4">
-                <div className="size-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Icon className="size-5 text-primary" />
+              <div key={label} className="flex items-center gap-3">
+                <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Icon className="size-4 text-primary" />
                 </div>
                 <div>
                   <div className="font-semibold text-sm">{label}</div>
@@ -134,7 +134,7 @@ function LoginPage() {
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-3xl shadow-elevated aspect-[16/6]">
+        <div className="relative overflow-hidden rounded-3xl shadow-elevated aspect-[16/5]">
           <img
             src={heroImg}
             alt="Comunidade trocando óleo de cozinha por recompensa digital"
