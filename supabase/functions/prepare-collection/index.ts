@@ -10,7 +10,7 @@ import {
 import {
   getAssociatedTokenAddressSync,
   createMintToInstruction,
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
 } from "npm:@solana/spl-token@0.4";
 import postgres from "npm:postgres@3";
 
@@ -39,7 +39,7 @@ function makeCreateAtaIdempotentInstruction(
       { pubkey: owner, isSigner: false, isWritable: false },
       { pubkey: mint, isSigner: false, isWritable: false },
       { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: false },
+      { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
     ],
     data: new Uint8Array([1]), // 1 = CREATE_IDEMPOTENT
   });
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     const connection = new Connection(SOLANA_RPC, "confirmed");
     const { blockhash } = await connection.getLatestBlockhash("confirmed");
 
-    const operatorAta = getAssociatedTokenAddressSync(COT_MINT, operatorPubkey);
+    const operatorAta = getAssociatedTokenAddressSync(COT_MINT, operatorPubkey, false, TOKEN_2022_PROGRAM_ID);
 
     const litersML = Math.round(liters * 1000);
     const timestamp = Date.now();
@@ -127,13 +127,15 @@ Deno.serve(async (req) => {
     );
 
     // 3. MintTo COT → ATA do operador (mint authority = tesouraria)
-    //    1 COT por litro, 6 decimais → liters * 1_000_000
+    //    1 COT por litro, 0 decimais → BigInt(liters) inteiros
     tx.add(
       createMintToInstruction(
         COT_MINT,
         operatorAta,
         treasuryPubkey,
-        BigInt(litersML) * BigInt(1000), // litersML * 1000 = liters * 1_000_000
+        BigInt(Math.round(liters)),
+        [],
+        TOKEN_2022_PROGRAM_ID,
       ),
     );
 

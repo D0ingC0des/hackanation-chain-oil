@@ -83,24 +83,26 @@ Deno.serve(async (req) => {
     let pixStatus = "pending";
 
     if (wooviKey && citizenPhone && wooviMode !== "mock") {
-      const wooviRes = await fetch(`${wooviUrl}/transfer`, {
+      const wooviRes = await fetch(`${wooviUrl}/api/v1/payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${wooviKey}`,
+          Authorization: wooviKey,
         },
         body: JSON.stringify({
+          type: "PIX_KEY",
           value: Math.round(rewardBrl * 100),
           destinationAlias: citizenPhone,
           destinationAliasType: "PHONE",
           correlationID: collectionId,
           comment: `ChainOil - coleta de ${liters}L de óleo usado`,
+          autoApprove: true,
         }),
       });
 
       if (wooviRes.ok) {
         const body = await wooviRes.json();
-        pixId = body?.transfer?.endToEndId ?? body?.endToEndId ?? body?.id ?? null;
+        pixId = body?.transaction?.endToEndId ?? body?.payment?.correlationID ?? null;
         pixStatus = "processing";
       } else {
         const errBody = await wooviRes.text();
