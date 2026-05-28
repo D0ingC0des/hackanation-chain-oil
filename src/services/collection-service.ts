@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { supabase } from "@/lib/supabase";
 
-const table = () => (supabase as any).from("oil_collections");
-
 export interface ProcessCollectionInput {
   operatorKey: string;
   citizenPhone: string;
@@ -57,7 +55,8 @@ export async function uploadCollectionPhoto(
     data: { publicUrl },
   } = supabase.storage.from("collection-photos").getPublicUrl(path);
 
-  const { error: updateError } = await table()
+  const { error: updateError } = await (supabase as any)
+    .from("oil_collections")
     .update({ photo_url: publicUrl })
     .eq("id", collectionId);
 
@@ -98,7 +97,7 @@ export interface CollectionHistoryItem {
 }
 
 export async function saveCollection(input: CollectionInput): Promise<void> {
-  const { error } = await table().insert({
+  const { error } = await (supabase as any).from("oil_collections").insert({
     operator_key: input.operatorKey,
     citizen_phone: input.citizenPhone,
     liters: input.liters,
@@ -120,7 +119,8 @@ function sumRows(rows: Array<{ liters: string; reward_brl: string }>): Collectio
 }
 
 export async function getMyStats(operatorKey: string): Promise<CollectionStats> {
-  const { data, error } = await table()
+  const { data, error } = await (supabase as any)
+    .from("oil_collections")
     .select("liters, reward_brl")
     .eq("operator_key", operatorKey);
   if (error || !data) return { totalLiters: 0, totalPix: 0 };
@@ -150,7 +150,9 @@ export async function getCollectionHistory(operatorKey: string): Promise<Collect
 }
 
 export async function getGlobalStats(): Promise<CollectionStats> {
-  const { data, error } = await table().select("liters, reward_brl");
+  const { data, error } = await (supabase as any)
+    .from("oil_collections")
+    .select("liters, reward_brl");
   if (error || !data) return { totalLiters: 0, totalPix: 0 };
   return sumRows(data);
 }
