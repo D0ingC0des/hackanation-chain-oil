@@ -1,0 +1,58 @@
+{
+  "address": "CHAiNoiLXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "metadata": {
+    "name": "chain_oil",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "ChainOil — registro imutável de coletas com atestação Chainlink"
+  },
+  "instructions": [
+    {
+      "name": "registerCollection",
+      "discriminator": [0, 0, 0, 0, 0, 0, 0, 0],
+      "accounts": [
+        { "name": "operator", "writable": true, "signer": true },
+        { "name": "operatorState", "writable": true },
+        { "name": "collection", "writable": true },
+        { "name": "chainlinkFeed" },
+        { "name": "systemProgram" }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": { "name": "RegisterCollectionParams" }
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Collection",
+      "discriminator": [0, 0, 0, 0, 0, 0, 0, 0]
+    },
+    {
+      "name": "OperatorState",
+      "discriminator": [0, 0, 0, 0, 0, 0, 0, 0]
+    }
+  ],
+  "types": [
+    {
+      "name": "RegisterCollectionParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "litersMl", "type": "u64" },
+          { "name": "rewardCentavos", "type": "u64" },
+          { "name": "supabaseId", "type": { "array": ["u8", 16] } }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    { "code": 6000, "name": "InvalidFeedOwner", "msg": "Chainlink feed não é o owner esperado" },
+    { "code": 6001, "name": "StaleFeedData", "msg": "Dado do Chainlink está desatualizado (staleness > 3600s)" },
+    { "code": 6002, "name": "InvalidLiters", "msg": "Litros inválidos — deve ser > 0" }
+  ]
+}
