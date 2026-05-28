@@ -49,6 +49,7 @@ function ProcessingPage() {
   const [step, setStep] = useState(0);
   const [failed, setFailed] = useState(false);
   const savedRef = useRef(false);
+  const resultRef = useRef<{ txHash: string | null; pixStatus: string } | null>(null);
 
   useEffect(() => {
     if (savedRef.current || !publicKey) return;
@@ -69,9 +70,9 @@ function ProcessingPage() {
           liters: l,
         });
 
-        // Step 2: partial-sign — Phantom popup
+        // Step 2: partial-sign — wallet popup
         setStep(3);
-        if (!signTransaction) throw new Error("Carteira não suporta assinatura. Use a Phantom.");
+        if (!signTransaction) throw new Error("Carteira não suporta assinatura. Reconecte sua carteira.");
         const txBytes = Uint8Array.from(atob(txBase64), (c) => c.charCodeAt(0));
         const tx = Transaction.from(txBytes);
         const signedTx = await signTransaction(tx);
@@ -91,6 +92,7 @@ function ProcessingPage() {
           liters: l,
           rewardBrl,
         });
+        resultRef.current = { txHash: result.txHash, pixStatus: result.pixStatus };
 
         const photo = sessionStorage.getItem("chainoil_pending_photo");
         sessionStorage.removeItem("chainoil_pending_photo");
@@ -110,10 +112,18 @@ function ProcessingPage() {
 
   useEffect(() => {
     if (step < STEPS.length) return;
-    const t = setTimeout(
-      () => navigate({ to: "/success", search: { l, p } as { l: number; p: string } }),
-      500,
-    );
+    const t = setTimeout(() => {
+      const r = resultRef.current;
+      navigate({
+        to: "/success",
+        search: {
+          l,
+          p,
+          txHash: r?.txHash ?? undefined,
+          pixStatus: r?.pixStatus ?? undefined,
+        },
+      });
+    }, 500);
     return () => clearTimeout(t);
   }, [step, navigate, l, p]);
 
@@ -168,11 +178,11 @@ function ProcessingPage() {
             </div>
 
             <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight">
-              {isWalletStep ? "Confirme na Phantom" : "Quase lá!"}
+              {isWalletStep ? "Confirme na carteira" : "Quase lá!"}
             </h1>
             <p className="mt-2 text-muted-foreground text-sm max-w-xs mx-auto">
               {isWalletStep
-                ? "Verifique sua carteira e aprove a transação para continuar."
+                ? "Verifique sua carteira Phantom ou Solflare e aprove a transação."
                 : `Confirmando sua coleta de ${l}L com segurança.`}
             </p>
 

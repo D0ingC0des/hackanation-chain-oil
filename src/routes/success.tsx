@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useRate } from "@/hooks/use-rate";
-import { Check, Droplets, Leaf, Trophy } from "lucide-react";
+import { AlertCircle, Check, Droplets, ExternalLink, Leaf, Trophy } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 
@@ -10,6 +10,8 @@ export const Route = createFileRoute("/success")({
   validateSearch: (s: Record<string, unknown>) => ({
     l: typeof s.l === "number" ? s.l : Number(s.l) || 2,
     p: typeof s.p === "string" ? s.p : "",
+    txHash: typeof s.txHash === "string" ? s.txHash : undefined,
+    pixStatus: typeof s.pixStatus === "string" ? s.pixStatus : undefined,
   }),
   head: () => ({
     meta: [
@@ -24,11 +26,31 @@ export const Route = createFileRoute("/success")({
 
 function SuccessPage() {
   useAuthGuard();
-  const { l, p } = Route.useSearch();
+  const { l, p, txHash, pixStatus } = Route.useSearch();
   const { rate } = useRate();
   const reward = (l * rate).toFixed(2).replace(".", ",");
   const water = l * 1000;
   const co2 = (l * 1.5).toFixed(1);
+
+  const isMock = pixStatus === "mock_pending";
+  const isFailed = pixStatus === "failed";
+  const isPending = pixStatus === "pending" || pixStatus === "processing";
+
+  const pixLabel = isMock
+    ? "Demo • PIX simulado"
+    : isFailed
+      ? "Problema no PIX"
+      : isPending
+        ? "PIX em processamento"
+        : "PIX enviado";
+
+  const pixDesc = isMock
+    ? "Modo demonstração — em produção o PIX seria enviado instantaneamente."
+    : isFailed
+      ? "Houve um problema ao processar o pagamento. Entre em contato com o suporte."
+      : isPending
+        ? "O PIX foi iniciado e chegará em instantes."
+        : `Enviado instantaneamente ${p ? `para ${p}` : "ao cidadão"}.`;
 
   return (
     <div className="relative">
@@ -47,8 +69,9 @@ function SuccessPage() {
               </div>
             </div>
 
-            <p className="text-sm font-semibold text-primary uppercase tracking-wider animate-float-up">
-              PIX enviado
+            <p className="text-sm font-semibold text-primary uppercase tracking-wider animate-float-up flex items-center justify-center gap-1.5">
+              {isFailed && <AlertCircle className="size-3.5" />}
+              {pixLabel}
             </p>
             <h1
               className="mt-1 text-4xl lg:text-5xl font-extrabold tracking-tight animate-float-up"
@@ -60,8 +83,20 @@ function SuccessPage() {
               className="mt-2 text-muted-foreground text-sm animate-float-up"
               style={{ animationDelay: "120ms" }}
             >
-              Enviado instantaneamente {p ? `para ${p}` : "ao cidadão"}.
+              {pixDesc}
             </p>
+            {txHash && (
+              <a
+                href={`https://explorer.solana.com/tx/${txHash}?cluster=devnet`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline animate-float-up"
+                style={{ animationDelay: "150ms" }}
+              >
+                Ver transação on-chain
+                <ExternalLink className="size-3" />
+              </a>
+            )}
 
             <div
               className="mt-8 grid grid-cols-2 lg:grid-cols-3 gap-3 animate-float-up"

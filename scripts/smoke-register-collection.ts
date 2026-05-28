@@ -16,11 +16,12 @@ import {
 } from '@solana/web3.js'
 import { createHash, randomBytes } from 'node:crypto'
 import fs from 'node:fs'
+import os from 'node:os'
 
 const PROGRAM_ID   = new PublicKey('DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh')
 const SOL_USD_FEED = new PublicKey('HgTtcbcmp5BeThax5AU8vg4VwK79qAvAKKegfthMvWdo')
 const RPC          = 'https://api.devnet.solana.com'
-const KEYPAIR_PATH = `${process.env.HOME}/.config/solana/id.json`
+const KEYPAIR_PATH = `${os.homedir()}/.config/solana/id.json`
 
 function methodDiscriminator(name: string): Buffer {
   return createHash('sha256').update(`global:${name}`).digest().slice(0, 8)
