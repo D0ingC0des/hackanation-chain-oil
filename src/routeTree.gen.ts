@@ -13,8 +13,10 @@ import { Route as SuccessRouteImport } from './routes/success'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProcessingRouteImport } from './routes/processing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CollectRouteImport } from './routes/collect'
+import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiOilRateRouteImport } from './routes/api/oil-rate'
@@ -39,6 +41,11 @@ const OnboardingRoute = OnboardingRouteImport.update({
   path: '/onboarding',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HistoricoRoute = HistoricoRouteImport.update({
+  id: '/historico',
+  path: '/historico',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -47,6 +54,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const CollectRoute = CollectRouteImport.update({
   id: '/collect',
   path: '/collect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AjudaRoute = AjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -68,8 +80,10 @@ const ApiOilRateRoute = ApiOilRateRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ajuda': typeof AjudaRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
+  '/historico': typeof HistoricoRoute
   '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
@@ -79,8 +93,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ajuda': typeof AjudaRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
+  '/historico': typeof HistoricoRoute
   '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
@@ -91,8 +107,10 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ajuda': typeof AjudaRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
+  '/historico': typeof HistoricoRoute
   '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
@@ -104,8 +122,10 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/collect'
     | '/dashboard'
+    | '/historico'
     | '/onboarding'
     | '/processing'
     | '/profile'
@@ -115,8 +135,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/collect'
     | '/dashboard'
+    | '/historico'
     | '/onboarding'
     | '/processing'
     | '/profile'
@@ -126,8 +148,10 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/collect'
     | '/dashboard'
+    | '/historico'
     | '/onboarding'
     | '/processing'
     | '/profile'
@@ -138,8 +162,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AjudaRoute: typeof AjudaRoute
   CollectRoute: typeof CollectRoute
   DashboardRoute: typeof DashboardRoute
+  HistoricoRoute: typeof HistoricoRoute
   OnboardingRoute: typeof OnboardingRoute
   ProcessingRoute: typeof ProcessingRoute
   ProfileRoute: typeof ProfileRoute
@@ -177,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/historico': {
+      id: '/historico'
+      path: '/historico'
+      fullPath: '/historico'
+      preLoaderRoute: typeof HistoricoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard': {
       id: '/dashboard'
       path: '/dashboard'
@@ -189,6 +222,13 @@ declare module '@tanstack/react-router' {
       path: '/collect'
       fullPath: '/collect'
       preLoaderRoute: typeof CollectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ajuda': {
+      id: '/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AjudaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -218,8 +258,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AjudaRoute: AjudaRoute,
   CollectRoute: CollectRoute,
   DashboardRoute: DashboardRoute,
+  HistoricoRoute: HistoricoRoute,
   OnboardingRoute: OnboardingRoute,
   ProcessingRoute: ProcessingRoute,
   ProfileRoute: ProfileRoute,
