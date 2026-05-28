@@ -128,11 +128,13 @@ export async function getMyStats(operatorKey: string): Promise<CollectionStats> 
 }
 
 export async function getCollectionHistory(operatorKey: string): Promise<CollectionHistoryItem[]> {
-  const { data, error } = await table()
-    .select("citizen_phone, reward_brl, collected_at, liters, photo_url, tx_hash, pix_status")
-    .eq("operator_key", operatorKey)
-    .order("collected_at", { ascending: false });
+  // Some environments use `created_at` instead of `collected_at` on `oil_collections`.
+  // Try `collected_at` first (requested), then fall back to `created_at` to avoid 500s.
+  const base = table().select("*").eq("operator_key", operatorKey);
+  const first = await base.order("collected_at", { ascending: false });
+  const second = first.error ? await base.order("created_at", { ascending: false }) : first;
 
+  const { data, error } = second;
   if (error || !data) return [];
 
   const fmtMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
@@ -140,7 +142,8 @@ export async function getCollectionHistory(operatorKey: string): Promise<Collect
   return (data as any[]).map((r) => {
     const liters = typeof r.liters === "number" ? r.liters : parseFloat(String(r.liters ?? 0));
     const reward = typeof r.reward_brl === "number" ? r.reward_brl : parseFloat(String(r.reward_brl ?? 0));
-    const collected = r.collected_at ? new Date(r.collected_at).toLocaleDateString("pt-BR") : "—";
+    const rawDate = r.collected_at ?? r.created_at ?? null;
+    const collected = rawDate ? new Date(rawDate).toLocaleDateString("pt-BR") : "—";
 
     return {
       citizen_phone: formatPhoneBr(String(r.citizen_phone ?? "")),
