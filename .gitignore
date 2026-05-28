@@ -31,3 +31,6 @@ dist-ssr
 *.sln
 *.sw?
 docs/
+
+# Anchor build artifacts
+anchor/target/

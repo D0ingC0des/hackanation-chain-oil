@@ -6,6 +6,8 @@ export interface ProcessCollectionInput {
   operatorKey: string;
   citizenPhone: string;
   liters: number;
+  txHash?: string;
+  collectionId?: string;
 }
 
 export interface ProcessCollectionResult {

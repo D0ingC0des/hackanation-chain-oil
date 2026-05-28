@@ -14,6 +14,8 @@ interface ProcessInput {
   operatorKey: string;
   citizenPhone: string; // chave PIX (telefone) do cidadão
   liters: number;
+  txHash?: string;     // assinatura da tx on-chain (Anchor)
+  collectionId?: string; // UUID gerado no front para cross-ref com PDA
 }
 
 Deno.serve(async (req) => {
@@ -22,7 +24,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { operatorKey, citizenPhone, liters }: ProcessInput = await req.json();
+    const { operatorKey, citizenPhone, liters, txHash, collectionId }: ProcessInput = await req.json();
 
     if (!operatorKey || !liters || liters <= 0) {
       return json({ success: false, error: "operatorKey e liters são obrigatórios" }, 400);
@@ -43,17 +45,21 @@ Deno.serve(async (req) => {
     const rate = rateRow ? parseFloat(rateRow.value) : 1.2;
     const rewardBrl = parseFloat((liters * rate).toFixed(2));
 
-    // 2. Salvar coleta com status pendente
+    // 2. Salvar coleta (usa UUID do front se disponível para cross-ref com PDA on-chain)
+    const insertPayload: Record<string, unknown> = {
+      operator_key: operatorKey,
+      citizen_phone: citizenPhone,
+      liters,
+      reward_brl: rewardBrl,
+      rate_used: rate,
+      pix_status: "pending",
+      tx_hash: txHash ?? null,
+    };
+    if (collectionId) insertPayload.id = collectionId;
+
     const { data: collection, error: insertErr } = await supabase
       .from("oil_collections")
-      .insert({
-        operator_key: operatorKey,
-        citizen_phone: citizenPhone,
-        liters,
-        reward_brl: rewardBrl,
-        rate_used: rate,
-        pix_status: "pending",
-      })
+      .insert(insertPayload)
       .select("id")
       .single();
 

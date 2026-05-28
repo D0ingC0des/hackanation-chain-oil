@@ -1,0 +1,20 @@
+[package]
+name = "chain-oil"
+version = "0.1.0"
+description = "ChainOil — registro imutável de coletas de óleo usado com atestação de valor via Chainlink"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "chain_oil"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.31.1"
+chainlink_solana = "2.0.8"
