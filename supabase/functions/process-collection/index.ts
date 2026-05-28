@@ -53,11 +53,17 @@ Deno.serve(async (req) => {
     // 4. Submeter para Solana devnet
     const connection = new Connection(SOLANA_RPC, "confirmed");
     const rawTx = tx.serialize();
+    // skipPreflight=true: devnet simulation uses a stale cache and rejects valid
+    // recent blockhashes — skip it and let the network validators decide.
     const txHash = await connection.sendRawTransaction(rawTx, {
-      skipPreflight: false,
-      preflightCommitment: "confirmed",
+      skipPreflight: true,
+      maxRetries: 3,
     });
-    await connection.confirmTransaction(txHash, "confirmed");
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+    await connection.confirmTransaction(
+      { signature: txHash, blockhash, lastValidBlockHeight },
+      "confirmed",
+    );
 
     console.log("tx co-assinada confirmada:", txHash);
 
