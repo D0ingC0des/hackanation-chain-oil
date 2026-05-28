@@ -5,17 +5,12 @@ const CORS = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Woovi endpoint para transferência PIX (cash-out).
-// Verificar em: https://developers.woovi.com/en/api/
-// Endpoint alternativo se /transfer não funcionar: /pix/cashout
-const WOOVI_API = "https://api.woovi.com/api/v1";
-
 interface ProcessInput {
   operatorKey: string;
-  citizenPhone: string; // chave PIX (telefone) do cidadão
+  citizenPhone: string;
   liters: number;
-  txHash?: string;     // assinatura da tx on-chain (Anchor)
-  collectionId?: string; // UUID gerado no front para cross-ref com PDA
+  txHash?: string;
+  collectionId?: string;
 }
 
 Deno.serve(async (req) => {
@@ -24,7 +19,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { operatorKey, citizenPhone, liters, txHash, collectionId }: ProcessInput = await req.json();
+    const { operatorKey, citizenPhone, liters, txHash, collectionId }: ProcessInput =
+      await req.json();
 
     if (!operatorKey || !liters || liters <= 0) {
       return json({ success: false, error: "operatorKey e liters são obrigatórios" }, 400);
@@ -35,7 +31,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Obter taxa atual do banco
+    // 1. Taxa atual do banco
     const { data: rateRow } = await supabase
       .from("oil_config")
       .select("value")
@@ -45,7 +41,7 @@ Deno.serve(async (req) => {
     const rate = rateRow ? parseFloat(rateRow.value) : 1.2;
     const rewardBrl = parseFloat((liters * rate).toFixed(2));
 
-    // 2. Salvar coleta (usa UUID do front se disponível para cross-ref com PDA on-chain)
+    // 2. Salvar coleta no schema isolado chainoil
     const insertPayload: Record<string, unknown> = {
       operator_key: operatorKey,
       citizen_phone: citizenPhone,
@@ -58,7 +54,8 @@ Deno.serve(async (req) => {
     if (collectionId) insertPayload.id = collectionId;
 
     const { data: collection, error: insertErr } = await supabase
-      .from("oil_collections")
+      .schema("chainoil")
+      .from("collections")
       .insert(insertPayload)
       .select("id")
       .single();
@@ -67,20 +64,23 @@ Deno.serve(async (req) => {
       throw new Error(insertErr?.message ?? "Falha ao salvar coleta");
     }
 
-    // 3. Enviar PIX via Woovi (cash-out para chave PIX do cidadão)
-    const wooviToken = Deno.env.get("WOOVI_APP_ID");
+    // 3. PIX via Woovi (cash-out para chave PIX do cidadão)
+    const wooviKey = Deno.env.get("WOOVI_API_KEY");
+    const wooviMode = Deno.env.get("WOOVI_MODE") ?? "mock";
+    const wooviUrl = Deno.env.get("WOOVI_API_URL") ?? "https://api.openpix.com.br/api/v1";
+
     let pixId: string | null = null;
     let pixStatus = "pending";
 
-    if (wooviToken && citizenPhone) {
-      const wooviRes = await fetch(`${WOOVI_API}/transfer`, {
+    if (wooviKey && citizenPhone && wooviMode !== "mock") {
+      const wooviRes = await fetch(`${wooviUrl}/transfer`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": wooviToken,
+          "Authorization": `Bearer ${wooviKey}`,
         },
         body: JSON.stringify({
-          value: Math.round(rewardBrl * 100), // valor em centavos
+          value: Math.round(rewardBrl * 100),
           destinationAlias: citizenPhone,
           destinationAliasType: "PHONE",
           correlationID: collection.id,
@@ -90,7 +90,6 @@ Deno.serve(async (req) => {
 
       if (wooviRes.ok) {
         const body = await wooviRes.json();
-        // O campo exato depende da versão da API Woovi — verificar com a documentação
         pixId = body?.transfer?.endToEndId ?? body?.endToEndId ?? body?.id ?? null;
         pixStatus = "processing";
       } else {
@@ -98,11 +97,15 @@ Deno.serve(async (req) => {
         console.error("Woovi error:", wooviRes.status, errBody);
         pixStatus = "failed";
       }
+    } else if (wooviMode === "mock") {
+      pixId = `mock-${collection.id}`;
+      pixStatus = "mock_pending";
     }
 
-    // 4. Atualizar coleta com resultado do PIX
+    // 4. Atualizar status do PIX na coleta
     await supabase
-      .from("oil_collections")
+      .schema("chainoil")
+      .from("collections")
       .update({ pix_id: pixId, pix_status: pixStatus })
       .eq("id", collection.id);
 
@@ -112,6 +115,7 @@ Deno.serve(async (req) => {
       pixId,
       pixStatus,
       rewardBrl,
+      mode: wooviMode,
     });
   } catch (err) {
     console.error("process-collection error:", err);
