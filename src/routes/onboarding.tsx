@@ -15,34 +15,12 @@ export const Route = createFileRoute("/onboarding")({
   }),
 });
 
-function maskPhone(v: string) {
-  return v
-    .replace(/\D/g, "")
-    .replace(/^(\d{2})(\d)/, "($1) $2")
-    .replace(/(\d{5})(\d)/, "$1-$2")
-    .slice(0, 15);
-}
-
-function maskCnpj(v: string) {
-  return v
-    .replace(/\D/g, "")
-    .replace(/^(\d{2})(\d)/, "$1.$2")
-    .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
-    .replace(/\.(\d{3})(\d)/, ".$1/$2")
-    .replace(/(\d{4})(\d)/, "$1-$2")
-    .slice(0, 18);
-}
-
 function maskCep(v: string) {
   return v.replace(/\D/g, "").replace(/^(\d{5})(\d)/, "$1-$2").slice(0, 9);
 }
 
 interface FormState {
-  name: string;
-  email: string;
-  phone: string;
   business_name: string;
-  cnpj: string;
   cep: string;
   street: string;
   neighborhood: string;
@@ -53,40 +31,11 @@ interface FormState {
 const INPUT_CLASS =
   "w-full h-12 rounded-2xl bg-card border border-border px-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition";
 
-function Field({
-  label,
-  required,
-  hint,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  hint?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <label className="text-sm font-medium">
-          {label}
-          {required && <span className="text-destructive ml-0.5">*</span>}
-        </label>
-        {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
 function OnboardingPage() {
   const navigate = useNavigate();
   const { connected, connecting, publicKey } = useWallet();
   const [form, setForm] = useState<FormState>({
-    name: "",
-    email: "",
-    phone: "",
     business_name: "",
-    cnpj: "",
     cep: "",
     street: "",
     neighborhood: "",
@@ -122,7 +71,7 @@ function OnboardingPage() {
         }));
       }
     } catch {
-      // ViaCEP indisponível — usuário pode preencher manualmente
+      // ViaCEP indisponível
     } finally {
       setCepLoading(false);
     }
@@ -136,11 +85,11 @@ function OnboardingPage() {
     try {
       await createProfile({
         public_key: publicKey.toBase58(),
-        name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone,
+        name: form.business_name.trim(),
+        email: "",
+        phone: "",
         business_name: form.business_name.trim(),
-        cnpj: form.cnpj || null,
+        cnpj: null,
         cep: form.cep.replace(/\D/g, ""),
         street: form.street || null,
         neighborhood: form.neighborhood || null,
@@ -155,6 +104,8 @@ function OnboardingPage() {
     }
   }
 
+  const canSubmit = !!form.business_name.trim() && !!form.city;
+
   return (
     <main className="min-h-screen bg-background flex flex-col items-center justify-center px-5 py-10">
       <div className="w-full max-w-md">
@@ -162,45 +113,15 @@ function OnboardingPage() {
           <Logo />
           <h1 className="mt-6 text-2xl font-extrabold tracking-tight">Complete seu perfil</h1>
           <p className="mt-1 text-muted-foreground text-sm">
-            Precisamos dessas informações para processar seus pagamentos via PIX.
+            Informe o nome do estabelecimento e o CEP para continuar.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Field label="Nome completo" required>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => set("name", e.target.value)}
-              placeholder="João Silva"
-              required
-              className={INPUT_CLASS}
-            />
-          </Field>
-
-          <Field label="E-mail" required>
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              placeholder="joao@exemplo.com"
-              required
-              className={INPUT_CLASS}
-            />
-          </Field>
-
-          <Field label="Celular" required>
-            <input
-              type="tel"
-              value={form.phone}
-              onChange={(e) => set("phone", maskPhone(e.target.value))}
-              placeholder="(44) 99999-9999"
-              required
-              className={INPUT_CLASS}
-            />
-          </Field>
-
-          <Field label="Nome do estabelecimento" required>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">
+              Nome do estabelecimento<span className="text-destructive ml-0.5">*</span>
+            </label>
             <input
               type="text"
               value={form.business_name}
@@ -209,19 +130,12 @@ function OnboardingPage() {
               required
               className={INPUT_CLASS}
             />
-          </Field>
+          </div>
 
-          <Field label="CNPJ" hint="Opcional">
-            <input
-              type="text"
-              value={form.cnpj}
-              onChange={(e) => set("cnpj", maskCnpj(e.target.value))}
-              placeholder="00.000.000/0001-00"
-              className={INPUT_CLASS}
-            />
-          </Field>
-
-          <Field label="CEP do estabelecimento" required>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">
+              CEP do estabelecimento<span className="text-destructive ml-0.5">*</span>
+            </label>
             <div className="relative">
               <input
                 type="text"
@@ -236,7 +150,7 @@ function OnboardingPage() {
                 <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 size-4 text-muted-foreground animate-spin" />
               )}
             </div>
-          </Field>
+          </div>
 
           {(form.city || form.street) && (
             <div className="rounded-2xl bg-secondary/60 border border-border px-4 py-3 text-sm space-y-0.5">
@@ -260,7 +174,7 @@ function OnboardingPage() {
 
           <button
             type="submit"
-            disabled={submitting || !form.city}
+            disabled={submitting || !canSubmit}
             className="w-full h-14 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-base shadow-soft active:scale-[0.98] transition disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
           >
             {submitting ? (

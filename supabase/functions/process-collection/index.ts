@@ -1,16 +1,25 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
+import {
+  Connection,
+  Transaction,
+  Keypair,
+} from "npm:@solana/web3.js@1";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const SOLANA_RPC = "https://api.devnet.solana.com";
+
 interface ProcessInput {
+  // Option B (co-signed tx)
+  collectionId: string;
+  partialSignedTxBase64: string;
   operatorKey: string;
   citizenPhone: string;
   liters: number;
-  txHash?: string;
-  collectionId?: string;
+  rewardBrl: number;
 }
 
 Deno.serve(async (req) => {
@@ -19,11 +28,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { operatorKey, citizenPhone, liters, txHash, collectionId }: ProcessInput =
-      await req.json();
+    const {
+      collectionId,
+      partialSignedTxBase64,
+      operatorKey,
+      citizenPhone,
+      liters,
+      rewardBrl,
+    }: ProcessInput = await req.json();
 
-    if (!operatorKey || !liters || liters <= 0) {
-      return json({ success: false, error: "operatorKey e liters são obrigatórios" }, 400);
+    if (!collectionId || !partialSignedTxBase64 || !operatorKey || !liters) {
+      return json({ success: false, error: "Parâmetros obrigatórios ausentes" }, 400);
     }
 
     const supabase = createClient(
@@ -31,40 +46,41 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1. Taxa atual do banco
-    const { data: rateRow } = await supabase
-      .from("oil_config")
-      .select("value")
-      .eq("key", "rate_per_liter")
-      .single();
+    // 1. Carregar keypair da tesouraria
+    const keypairEnv = Deno.env.get("TREASURY_KEYPAIR");
+    if (!keypairEnv) throw new Error("TREASURY_KEYPAIR não configurada");
+    const treasury = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(keypairEnv)));
 
-    const rate = rateRow ? parseFloat(rateRow.value) : 1.2;
-    const rewardBrl = parseFloat((liters * rate).toFixed(2));
+    // 2. Deserializar tx parcialmente assinada pelo operador
+    const txBytes = Uint8Array.from(atob(partialSignedTxBase64), (c) => c.charCodeAt(0));
+    const tx = Transaction.from(txBytes);
 
-    // 2. Salvar coleta no schema isolado chainoil
-    const insertPayload: Record<string, unknown> = {
-      operator_key: operatorKey,
-      citizen_phone: citizenPhone,
-      liters,
-      reward_brl: rewardBrl,
-      rate_used: rate,
-      pix_status: "pending",
-      tx_hash: txHash ?? null,
-    };
-    if (collectionId) insertPayload.id = collectionId;
+    // 3. Tesouraria co-assina (adiciona a assinatura do feePayer + mintTo authority)
+    tx.partialSign(treasury);
 
-    const { data: collection, error: insertErr } = await supabase
+    // 4. Submeter para Solana devnet
+    const connection = new Connection(SOLANA_RPC, "confirmed");
+    const rawTx = tx.serialize();
+    const txHash = await connection.sendRawTransaction(rawTx, {
+      skipPreflight: false,
+      preflightCommitment: "confirmed",
+    });
+    await connection.confirmTransaction(txHash, "confirmed");
+
+    console.log("tx co-assinada confirmada:", txHash);
+
+    // 5. Atualizar registro com txHash + operador
+    await supabase
       .schema("chainoil")
       .from("collections")
-      .insert(insertPayload)
-      .select("id")
-      .single();
+      .update({
+        tx_sig_coassigned: txHash,
+        operator_pubkey: operatorKey,
+        pix_status: "pending",
+      })
+      .eq("id", collectionId);
 
-    if (insertErr || !collection) {
-      throw new Error(insertErr?.message ?? "Falha ao salvar coleta");
-    }
-
-    // 3. PIX via Woovi (cash-out para chave PIX do cidadão)
+    // 6. PIX via Woovi
     const wooviKey = Deno.env.get("WOOVI_API_KEY");
     const wooviMode = Deno.env.get("WOOVI_MODE") ?? "mock";
     const wooviUrl = Deno.env.get("WOOVI_API_URL") ?? "https://api.openpix.com.br/api/v1";
@@ -83,7 +99,7 @@ Deno.serve(async (req) => {
           value: Math.round(rewardBrl * 100),
           destinationAlias: citizenPhone,
           destinationAliasType: "PHONE",
-          correlationID: collection.id,
+          correlationID: collectionId,
           comment: `ChainOil - coleta de ${liters}L de óleo usado`,
         }),
       });
@@ -98,20 +114,21 @@ Deno.serve(async (req) => {
         pixStatus = "failed";
       }
     } else if (wooviMode === "mock") {
-      pixId = `mock-${collection.id}`;
+      pixId = `mock-${collectionId}`;
       pixStatus = "mock_pending";
     }
 
-    // 4. Atualizar status do PIX na coleta
+    // 7. Atualizar pix_id + pix_status
     await supabase
       .schema("chainoil")
       .from("collections")
       .update({ pix_id: pixId, pix_status: pixStatus })
-      .eq("id", collection.id);
+      .eq("id", collectionId);
 
     return json({
       success: true,
-      collectionId: collection.id,
+      collectionId,
+      txHash,
       pixId,
       pixStatus,
       rewardBrl,

@@ -2,16 +2,45 @@ import { supabase } from "@/lib/supabase";
 
 const table = () => (supabase as any).from("oil_collections");
 
-export interface ProcessCollectionInput {
+// ── Option B: prepare (build tx) ───────────────────────────────────────────
+
+export interface PrepareCollectionInput {
   operatorKey: string;
   citizenPhone: string;
   liters: number;
-  txHash?: string;
-  collectionId?: string;
+}
+
+export interface PrepareCollectionResult {
+  collectionId: string;
+  txBase64: string;
+  rewardBrl: number;
+}
+
+export async function prepareCollection(
+  input: PrepareCollectionInput,
+): Promise<PrepareCollectionResult> {
+  const { data, error } = await supabase.functions.invoke("prepare-collection", {
+    body: input,
+  });
+  if (error) throw error;
+  if (!data?.success) throw new Error(data?.error ?? "Falha ao preparar transação");
+  return data as PrepareCollectionResult;
+}
+
+// ── Option B: process (co-sign + submit + PIX) ────────────────────────────
+
+export interface ProcessCollectionInput {
+  collectionId: string;
+  partialSignedTxBase64: string;
+  operatorKey: string;
+  citizenPhone: string;
+  liters: number;
+  rewardBrl: number;
 }
 
 export interface ProcessCollectionResult {
   collectionId: string;
+  txHash: string | null;
   pixId: string | null;
   pixStatus: string;
   rewardBrl: number;
