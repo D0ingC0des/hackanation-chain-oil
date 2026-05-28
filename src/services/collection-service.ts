@@ -127,22 +127,25 @@ export async function getMyStats(operatorKey: string): Promise<CollectionStats> 
   return sumRows(data);
 }
 
-export async function getCollectionHistory(operatorKey: string): Promise<CollectionHistoryItem[]> {
+export async function getCollectionHistory(operatorKey: string) {
   const { data, error } = await (supabase as any)
     .from("oil_collections")
-    .select("*")
+    .select("citizen_phone, reward_brl, collected_at, liters, photo_url, tx_hash, pix_status")
     .eq("operator_key", operatorKey)
     .order("collected_at", { ascending: false });
 
-  if (error || !data) return [];
+  if (error) {
+    console.log("erro supabase:", error.message);
+    return [];
+  }
 
-  const fmtMoney = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
-
-  return (data as any[]).map((r) => ({
-    citizen_phone: formatPhoneBr(String(r.citizen_phone ?? "")),
-    reward_brl: fmtMoney.format(Number(r.reward_brl ?? 0)),
-    collected_at: new Date(String(r.collected_at)).toLocaleDateString("pt-BR"),
-    liters: Number(r.liters ?? 0),
+  return (data ?? []).map((r: any) => ({
+    citizen_phone: r.citizen_phone?.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3") ?? "",
+    reward_brl: new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+      r.reward_brl,
+    ),
+    collected_at: new Date(r.collected_at).toLocaleDateString("pt-BR"),
+    liters: r.liters,
     photo_url: r.photo_url ?? null,
     tx_hash: r.tx_hash ?? null,
     pix_status: r.pix_status ?? null,
