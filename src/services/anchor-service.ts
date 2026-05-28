@@ -4,12 +4,11 @@ import type { AnchorWallet } from "@solana/wallet-adapter-react";
 
 // Feed SOL/USD Devnet — https://docs.chain.link/data-feeds/price-feeds/addresses?network=solana
 export const SOL_USD_DEVNET = new PublicKey(
-  "HgTtcbcmp5BeThax5AU8vg4VwK79qAvAKKegfthMvWdo",
+  "99B2bTijsU6f1GCT73HmdR7HCFFjGMBcPZY6jZ96ynrR",
 );
 
-// Substituir pelo Program ID real após `anchor build && anchor deploy`
 const PROGRAM_ID = new PublicKey(
-  "CHAiNoiLXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh",
 );
 
 const RPC = "https://api.devnet.solana.com";

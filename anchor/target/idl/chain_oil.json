@@ -1,28 +1,61 @@
 {
-  "address": "CHAiNoiLXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+  "address": "DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh",
   "metadata": {
     "name": "chain_oil",
     "version": "0.1.0",
     "spec": "0.1.0",
-    "description": "ChainOil — registro imutável de coletas com atestação Chainlink"
+    "description": "ChainOil — registro imutável de coletas de óleo usado com atestação de valor via Chainlink"
   },
   "instructions": [
     {
-      "name": "registerCollection",
-      "discriminator": [0, 0, 0, 0, 0, 0, 0, 0],
+      "name": "register_collection",
+      "docs": [
+        "Registra uma coleta de óleo usado na blockchain.",
+        "Lê o preço SOL/USD do Chainlink para atestar o valor em USD no momento da coleta."
+      ],
+      "discriminator": [31, 223, 167, 49, 112, 146, 196, 147],
       "accounts": [
-        { "name": "operator", "writable": true, "signer": true },
-        { "name": "operatorState", "writable": true },
-        { "name": "collection", "writable": true },
-        { "name": "chainlinkFeed" },
-        { "name": "systemProgram" }
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "operator_state",
+          "docs": ["PDA de estado do operador — criado automaticamente na primeira coleta"],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [111, 112, 101, 114, 97, 116, 111, 114, 95, 115, 116, 97, 116, 101] },
+              { "kind": "account", "path": "operator" }
+            ]
+          }
+        },
+        {
+          "name": "collection",
+          "docs": ["PDA da coleta individual"],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [99, 111, 108, 108, 101, 99, 116, 105, 111, 110] },
+              { "kind": "account", "path": "operator" },
+              { "kind": "account", "path": "operator_state.total_collections", "account": "OperatorState" }
+            ]
+          }
+        },
+        {
+          "name": "chainlink_feed",
+          "docs": ["Conta do feed Chainlink SOL/USD (passada como AccountInfo para leitura via SDK)"]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
       ],
       "args": [
         {
           "name": "params",
-          "type": {
-            "defined": { "name": "RegisterCollectionParams" }
-          }
+          "type": { "defined": { "name": "RegisterCollectionParams" } }
         }
       ]
     }
@@ -30,29 +63,65 @@
   "accounts": [
     {
       "name": "Collection",
-      "discriminator": [0, 0, 0, 0, 0, 0, 0, 0]
+      "discriminator": [48, 160, 232, 205, 191, 207, 26, 141]
     },
     {
       "name": "OperatorState",
-      "discriminator": [0, 0, 0, 0, 0, 0, 0, 0]
-    }
-  ],
-  "types": [
-    {
-      "name": "RegisterCollectionParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          { "name": "litersMl", "type": "u64" },
-          { "name": "rewardCentavos", "type": "u64" },
-          { "name": "supabaseId", "type": { "array": ["u8", 16] } }
-        ]
-      }
+      "discriminator": [253, 164, 195, 158, 226, 13, 170, 145]
     }
   ],
   "errors": [
     { "code": 6000, "name": "InvalidFeedOwner", "msg": "Chainlink feed não é o owner esperado" },
     { "code": 6001, "name": "StaleFeedData", "msg": "Dado do Chainlink está desatualizado (staleness > 3600s)" },
     { "code": 6002, "name": "InvalidLiters", "msg": "Litros inválidos — deve ser > 0" }
+  ],
+  "types": [
+    {
+      "name": "Collection",
+      "docs": [
+        "PDA que armazena uma coleta registrada on-chain.",
+        "Seeds: [\"collection\", operator.key, collection_seq (u64 as le bytes)]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "operator", "docs": ["Carteira do operador/estabelecimento"], "type": "pubkey" },
+          { "name": "liters_ml", "docs": ["Litros coletados × 1000 (3 casas decimais sem float)"], "type": "u64" },
+          { "name": "reward_centavos", "docs": ["Recompensa em BRL × 100 (centavos)"], "type": "u64" },
+          { "name": "sol_usd_price", "docs": ["Preço SOL/USD no momento — resposta do Chainlink × 10^8"], "type": "i128" },
+          { "name": "sol_usd_decimals", "docs": ["Decimais do feed Chainlink (normalmente 8)"], "type": "u8" },
+          { "name": "supabase_id", "docs": ["ID da coleta no Supabase (UUID como bytes) para cross-referência"], "type": { "array": ["u8", 16] } },
+          { "name": "collected_at", "docs": ["Timestamp Unix da coleta"], "type": "i64" },
+          { "name": "seq", "docs": ["Sequência do operador (incrementada a cada coleta)"], "type": "u64" },
+          { "name": "bump", "docs": ["Bump do PDA"], "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "OperatorState",
+      "docs": [
+        "PDA que mantém o contador de coletas de um operador.",
+        "Seeds: [\"operator_state\", operator.key]"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "operator", "type": "pubkey" },
+          { "name": "total_collections", "type": "u64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "RegisterCollectionParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "liters_ml", "docs": ["Litros × 1000 (ex: 2.5L → 2500)"], "type": "u64" },
+          { "name": "reward_centavos", "docs": ["Recompensa calculada em centavos BRL (ex: R$ 3,00 → 300)"], "type": "u64" },
+          { "name": "supabase_id", "docs": ["UUID da coleta no Supabase como [u8; 16]"], "type": { "array": ["u8", 16] } }
+        ]
+      }
+    }
   ]
 }

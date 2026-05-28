@@ -6,7 +6,7 @@ pub mod errors;
 
 use instructions::register_collection::*;
 
-declare_id!("CHAiNoiLXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"); // substituir após `anchor build`
+declare_id!("DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh");
 
 #[program]
 pub mod chain_oil {
