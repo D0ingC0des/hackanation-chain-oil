@@ -1,5 +1,5 @@
-import { createClient } from "npm:@supabase/supabase-js@2";
 import { Connection, Transaction, Keypair } from "npm:@solana/web3.js@1";
+import postgres from "npm:postgres@3";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +9,6 @@ const CORS = {
 const SOLANA_RPC = "https://api.devnet.solana.com";
 
 interface ProcessInput {
-  // Option B (co-signed tx)
   collectionId: string;
   partialSignedTxBase64: string;
   operatorKey: string;
@@ -22,6 +21,8 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: CORS });
   }
+
+  const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false });
 
   try {
     const {
@@ -36,11 +37,6 @@ Deno.serve(async (req) => {
     if (!collectionId || !partialSignedTxBase64 || !operatorKey || !liters) {
       return json({ success: false, error: "Parâmetros obrigatórios ausentes" }, 400);
     }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
 
     // 1. Carregar keypair da tesouraria
     const keypairEnv = Deno.env.get("TREASURY_KEYPAIR");
@@ -65,16 +61,12 @@ Deno.serve(async (req) => {
 
     console.log("tx co-assinada confirmada:", txHash);
 
-    // 5. Atualizar registro com txHash + operador
-    await supabase
-      .schema("chainoil")
-      .from("collections")
-      .update({
-        tx_sig_coassigned: txHash,
-        operator_pubkey: operatorKey,
-        pix_status: "pending",
-      })
-      .eq("id", collectionId);
+    // 5. Atualizar registro com txHash + operador (postgres direto — chainoil schema)
+    await sql`
+      UPDATE chainoil.collections
+      SET tx_sig_coassigned = ${txHash}, operator_pubkey = ${operatorKey}, pix_status = 'pending'
+      WHERE id = ${collectionId}
+    `;
 
     // 6. PIX via Woovi
     const wooviKey = Deno.env.get("WOOVI_API_KEY");
@@ -115,11 +107,11 @@ Deno.serve(async (req) => {
     }
 
     // 7. Atualizar pix_id + pix_status
-    await supabase
-      .schema("chainoil")
-      .from("collections")
-      .update({ pix_id: pixId, pix_status: pixStatus })
-      .eq("id", collectionId);
+    await sql`
+      UPDATE chainoil.collections
+      SET pix_id = ${pixId}, pix_status = ${pixStatus}
+      WHERE id = ${collectionId}
+    `;
 
     return json({
       success: true,
@@ -133,6 +125,8 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("process-collection error:", err);
     return json({ success: false, error: (err as Error).message }, 500);
+  } finally {
+    await sql.end();
   }
 });
 

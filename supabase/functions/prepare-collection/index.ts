@@ -12,6 +12,7 @@ import {
   createMintToInstruction,
   TOKEN_PROGRAM_ID,
 } from "npm:@solana/spl-token@0.4";
+import postgres from "npm:postgres@3";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -54,6 +55,8 @@ interface PrepareInput {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
+  const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, { prepare: false });
+
   try {
     const {
       operatorKey,
@@ -66,12 +69,11 @@ Deno.serve(async (req) => {
       return json({ success: false, error: "operatorKey e liters são obrigatórios" }, 400);
     }
 
+    // Taxa atual (public schema — supabase-js funciona normalmente)
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
-
-    // Taxa atual
     const { data: rateRow } = await supabase
       .from("oil_config")
       .select("value")
@@ -87,22 +89,14 @@ Deno.serve(async (req) => {
     const treasuryPubkey = treasury.publicKey;
     const operatorPubkey = new PublicKey(operatorKey);
 
-    // Pré-inserir registro (pix_status: "preparing")
-    const { error: insertErr } = await supabase
-      .schema("chainoil")
-      .from("collections")
-      .insert({
-        id: collectionId,
-        operator_key: operatorKey,
-        operator_pubkey: operatorKey,
-        citizen_phone: citizenPhone ?? "",
-        liters,
-        reward_brl: rewardBrl,
-        rate_used: rate,
-        pix_status: "preparing",
-      });
-
-    if (insertErr) throw new Error(insertErr.message);
+    // Pré-inserir registro via postgres direto (chainoil schema não exposto no PostgREST)
+    await sql`
+      INSERT INTO chainoil.collections
+        (id, operator_key, operator_pubkey, citizen_phone, liters, reward_brl, rate_used, pix_status)
+      VALUES
+        (${collectionId}, ${operatorKey}, ${operatorKey}, ${citizenPhone ?? ""},
+         ${liters}, ${rewardBrl}, ${rate}, 'preparing')
+    `;
 
     // Montar transação Solana
     const connection = new Connection(SOLANA_RPC, "confirmed");
@@ -151,6 +145,8 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("prepare-collection error:", err);
     return json({ success: false, error: (err as Error).message }, 500);
+  } finally {
+    await sql.end();
   }
 });
 
