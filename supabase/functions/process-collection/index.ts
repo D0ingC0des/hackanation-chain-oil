@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     let pixId: string | null = null;
     let pixStatus = "pending";
 
-    if (wooviKey && citizenPhone && wooviMode !== "mock") {
+    if (wooviKey && wooviMode !== "mock") {
       const wooviRes = await fetch(`${wooviBase}/api/v1/payment`, {
         method: "POST",
         headers: {
@@ -115,15 +115,21 @@ Deno.serve(async (req) => {
         console.error("Woovi error:", wooviRes.status, wooviText);
         pixStatus = "failed";
       }
-    } else if (wooviMode === "mock") {
+    } else {
+      // Mock: sem chave Woovi configurada ou WOOVI_MODE=mock
       pixId = `mock-${collectionId}`;
       pixStatus = "mock_pending";
     }
 
-    // 7. Atualizar pix_id + pix_status
+    // 7. Atualizar pix_id + pix_status em ambos os schemas
     await sql`
       UPDATE chainoil.collections
       SET pix_id = ${pixId}, pix_status = ${pixStatus}
+      WHERE id = ${collectionId}
+    `;
+    await sql`
+      UPDATE public.oil_collections
+      SET pix_status = ${pixStatus}, pix_id = ${pixId}
       WHERE id = ${collectionId}
     `;
 

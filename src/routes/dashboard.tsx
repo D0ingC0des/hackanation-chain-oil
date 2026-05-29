@@ -159,7 +159,7 @@ function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold">{fmtPhone(record.citizen_phone)}</p>
-                    <p className="text-xs text-muted-foreground">{fmtDate(record.created_at)}</p>
+                    <p className="text-xs text-muted-foreground">{fmtDate(record.collected_at)}</p>
                   </div>
                   <p className="text-sm font-bold text-primary shrink-0">
                     {fmtBrl(Number(record.reward_brl))}

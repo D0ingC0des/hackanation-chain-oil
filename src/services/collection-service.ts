@@ -1,4 +1,9 @@
-import { supabase } from "@/lib/supabase";
+import { supabase, supabaseAnonKey } from "@/lib/supabase";
+
+const fnHeaders = () => ({
+  apikey: supabaseAnonKey,
+  Authorization: `Bearer ${supabaseAnonKey}`,
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const table = () => (supabase as any).from("oil_collections");
@@ -24,6 +29,7 @@ export async function prepareCollection(
 ): Promise<PrepareCollectionResult> {
   const { data, error } = await supabase.functions.invoke("prepare-collection", {
     body: input,
+    headers: fnHeaders(),
   });
   if (error) throw error;
   if (!data?.success) throw new Error(data?.error ?? "Falha ao preparar transação");
@@ -55,6 +61,7 @@ export async function processCollection(
 ): Promise<ProcessCollectionResult> {
   const { data, error } = await supabase.functions.invoke("process-collection", {
     body: input,
+    headers: fnHeaders(),
   });
   if (error) throw error;
   if (!data?.success) throw new Error(data?.error ?? "Falha ao processar coleta");
@@ -152,14 +159,15 @@ export interface CollectionRecord {
   id: string;
   citizen_phone: string;
   reward_brl: number;
-  created_at: string;
+  collected_at: string;
+  pix_status?: string;
 }
 
 export async function getMyHistory(operatorKey: string): Promise<CollectionRecord[]> {
   const { data, error } = await table()
-    .select("id, citizen_phone, reward_brl, created_at")
+    .select("id, citizen_phone, reward_brl, collected_at, pix_status")
     .eq("operator_key", operatorKey)
-    .order("created_at", { ascending: false })
+    .order("collected_at", { ascending: false })
     .limit(50);
   if (error || !data) return [];
   return data;

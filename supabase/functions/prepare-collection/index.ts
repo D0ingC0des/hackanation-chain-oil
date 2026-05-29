@@ -91,6 +91,19 @@ Deno.serve(async (req) => {
          ${liters}, ${rewardBrl}, ${rate}, 'preparing')
     `;
 
+    // Replica para public.oil_collections (lido pelo app via REST anon)
+    const { error: pubErr } = await supabase
+      .from("oil_collections")
+      .insert({
+        id: collectionId,
+        operator_key: operatorKey,
+        citizen_phone: citizenPhone ?? "",
+        liters,
+        reward_brl: rewardBrl,
+        rate_used: rate,
+      });
+    if (pubErr) console.error("oil_collections insert error:", pubErr.message);
+
     // Montar transação Solana
     const connection = new Connection(SOLANA_RPC, "confirmed");
     const { blockhash } = await connection.getLatestBlockhash("confirmed");
