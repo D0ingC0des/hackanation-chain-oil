@@ -91,11 +91,10 @@ Deno.serve(async (req) => {
       console.error("[9] chainoil update error (non-fatal):", (dbErr as Error).message);
     }
 
-    // 6. PIX via Woovi
+    // 6. PIX via Woovi — mesmo padrão do request-payout (Uber Money)
     const wooviKey = Deno.env.get("WOOVI_API_KEY") ?? "";
     const wooviMode = (Deno.env.get("WOOVI_MODE") ?? "mock").toLowerCase();
-    const wooviBase = Deno.env.get("WOOVI_API_URL") ??
-      (wooviMode === "sandbox" ? "https://api.woovi-sandbox.com" : "https://api.woovi.com");
+    const wooviBase = Deno.env.get("WOOVI_API_URL") ?? "https://api.woovi-sandbox.com/api/v1";
     console.log("[10] wooviMode:", wooviMode, "wooviKey set:", !!wooviKey, "base:", wooviBase);
 
     let pixId: string | null = null;
@@ -106,7 +105,7 @@ Deno.serve(async (req) => {
       pixStatus = "mock_pending";
       console.log("[11] mock PIX, pixId:", pixId);
     } else {
-      const wooviRes = await fetch(`${wooviBase}/api/v1/payment`, {
+      const wooviRes = await fetch(`${wooviBase}/payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -119,18 +118,23 @@ Deno.serve(async (req) => {
           destinationAliasType: citizenPixType ?? "PHONE",
           correlationID: collectionId,
           comment: `ChainOil - coleta de ${liters}L de óleo usado`,
-          autoApprove: true,
+          autoApprove: false,
         }),
+        signal: AbortSignal.timeout(25_000),
       });
 
       const wooviText = await wooviRes.text();
       if (wooviRes.ok) {
-        let body: Record<string, unknown> | null = null;
-        try { body = JSON.parse(wooviText); } catch { /* keep null */ }
-        pixId = (body?.transaction as Record<string, unknown> | undefined)?.endToEndId as string ??
-          (body?.payment as Record<string, unknown> | undefined)?.correlationID as string ?? null;
-        // Sandbox confirma inline (sem webhook real); prod aguarda webhook
-        pixStatus = wooviMode === "sandbox" ? "confirmed" : "processing";
+        let wooviData: Record<string, unknown> | null = null;
+        try { wooviData = JSON.parse(wooviText); } catch { /* keep null */ }
+        pixId = (wooviData?.transaction as Record<string, unknown> | undefined)?.endToEndId as string ??
+          (wooviData?.payment as Record<string, unknown> | undefined)?.correlationID as string ?? null;
+        if (wooviMode === "sandbox") {
+          pixId = `SANDBOX-${collectionId.slice(0, 8)}`;
+          pixStatus = "confirmed";
+        } else {
+          pixStatus = "processing";
+        }
       } else {
         console.error("Woovi error:", wooviRes.status, wooviText);
         pixStatus = "failed";
@@ -191,7 +195,7 @@ Deno.serve(async (req) => {
       pixId,
       pixStatus,
       rewardBrl,
-      mode: isProduction ? "production" : "mock",
+      mode: wooviMode,
       summary: {
         timestamp: new Date().toISOString(),
         onChain: {

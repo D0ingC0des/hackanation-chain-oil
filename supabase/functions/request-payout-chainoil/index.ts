@@ -5,8 +5,8 @@ import postgres from "npm:postgres@3";
 import { json, handleOptions } from "../_shared/cors.ts";
 
 const WOOVI_API_KEY = Deno.env.get("WOOVI_API_KEY") ?? "";
-const WOOVI_BASE = Deno.env.get("WOOVI_API_URL") ?? "https://api.openpix.com.br";
 const WOOVI_MODE = (Deno.env.get("WOOVI_MODE") ?? "mock").toLowerCase();
+const WOOVI_BASE = Deno.env.get("WOOVI_API_URL") ?? "https://api.woovi-sandbox.com/api/v1";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions(req);
@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
   try {
     const [col] = await sql`
-      SELECT id, citizen_phone, reward_brl, pix_status, pix_id, tx_sig_coassigned
+      SELECT id, citizen_phone, citizen_pix_type, reward_brl, pix_status, pix_id, tx_sig_coassigned
       FROM chainoil.collections
       WHERE id = ${body.collectionId}
     `;
@@ -64,17 +64,17 @@ Deno.serve(async (req) => {
     if (!WOOVI_API_KEY) return json({ error: "WOOVI_API_KEY not configured" }, 500, req);
     if (!col.citizen_phone) return json({ error: "Collection has no citizen_phone" }, 400, req);
 
-    const wooviRes = await fetch(`${WOOVI_BASE}/api/v1/payment`, {
+    const wooviRes = await fetch(`${WOOVI_BASE}/payment`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: WOOVI_API_KEY },
       body: JSON.stringify({
         type: "PIX_KEY",
         value: amountCents,
         destinationAlias: col.citizen_phone,
-        destinationAliasType: "PHONE",
+        destinationAliasType: (col.citizen_pix_type ?? "PHONE").toUpperCase(),
         correlationID: correlationId,
         comment: `ChainOil - coleta ${body.collectionId.slice(0, 8)}`,
-        autoApprove: true,
+        autoApprove: false,
       }),
       signal: AbortSignal.timeout(25_000),
     });
@@ -89,12 +89,12 @@ Deno.serve(async (req) => {
     }
 
     const d = wooviData as Record<string, unknown> | null;
-    const pixId =
-      (d?.transaction as Record<string, unknown> | undefined)?.endToEndId as string ??
-      (d?.payment as Record<string, unknown> | undefined)?.correlationID as string ??
-      correlationId;
+    const pixId = WOOVI_MODE === "sandbox"
+      ? `SANDBOX-${correlationId.slice(0, 8)}`
+      : ((d?.transaction as Record<string, unknown> | undefined)?.endToEndId as string ??
+         (d?.payment as Record<string, unknown> | undefined)?.correlationID as string ??
+         correlationId);
 
-    // Sandbox: confirma inline (sem webhook real)
     const newStatus = WOOVI_MODE === "sandbox" ? "confirmed" : "processing";
     await sql`
       UPDATE chainoil.collections
