@@ -99,6 +99,17 @@ Deno.serve(async (req) => {
     const wooviBase = Deno.env.get("WOOVI_API_URL") ?? "https://api.woovi-sandbox.com/api/v1";
     console.log("[10] wooviMode:", wooviMode, "wooviKey set:", !!wooviKey, "base:", wooviBase);
 
+    // Normaliza a chave PIX para o formato esperado pela Woovi
+    const pixType = citizenPixType ?? "PHONE";
+    let normalizedPixKey = citizenPhone;
+    if (pixType === "PHONE") {
+      const digits = citizenPhone.replace(/\D/g, "");
+      normalizedPixKey = digits.startsWith("55") ? `+${digits}` : `+55${digits}`;
+    } else if (pixType === "CPF") {
+      normalizedPixKey = citizenPhone.replace(/\D/g, "");
+    }
+    console.log("[10b] pixType:", pixType, "normalizedKey:", normalizedPixKey);
+
     let pixId: string | null = null;
     let pixStatus = "pending";
 
@@ -116,8 +127,8 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           type: "PIX_KEY",
           value: Math.round(rewardBrl * 100),
-          destinationAlias: citizenPhone,
-          destinationAliasType: citizenPixType ?? "PHONE",
+          destinationAlias: normalizedPixKey,
+          destinationAliasType: pixType,
           correlationID: collectionId,
           comment: `ChainOil - coleta de ${liters}L de óleo usado`,
           autoApprove: false,
