@@ -77,13 +77,13 @@ Deno.serve(async (req) => {
     // 6. PIX via Woovi
     const wooviKey = Deno.env.get("WOOVI_API_KEY");
     const wooviMode = Deno.env.get("WOOVI_MODE") ?? "mock";
-    const wooviUrl = Deno.env.get("WOOVI_API_URL") ?? "https://api.openpix.com.br/api/v1";
+    const wooviBase = Deno.env.get("WOOVI_API_URL") ?? "https://api.openpix.com.br";
 
     let pixId: string | null = null;
     let pixStatus = "pending";
 
     if (wooviKey && citizenPhone && wooviMode !== "mock") {
-      const wooviRes = await fetch(`${wooviUrl}/api/v1/payment`, {
+      const wooviRes = await fetch(`${wooviBase}/api/v1/payment`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -100,13 +100,15 @@ Deno.serve(async (req) => {
         }),
       });
 
+      const wooviText = await wooviRes.text();
       if (wooviRes.ok) {
-        const body = await wooviRes.json();
-        pixId = body?.transaction?.endToEndId ?? body?.payment?.correlationID ?? null;
+        let body: Record<string, unknown> | null = null;
+        try { body = JSON.parse(wooviText); } catch { /* keep null */ }
+        pixId = (body?.transaction as Record<string, unknown> | undefined)?.endToEndId as string ??
+          (body?.payment as Record<string, unknown> | undefined)?.correlationID as string ?? null;
         pixStatus = "processing";
       } else {
-        const errBody = await wooviRes.text();
-        console.error("Woovi error:", wooviRes.status, errBody);
+        console.error("Woovi error:", wooviRes.status, wooviText);
         pixStatus = "failed";
       }
     } else if (wooviMode === "mock") {
