@@ -19,6 +19,7 @@ interface ProcessInput {
   citizenPixType?: PixType;
   liters: number;
   rewardBrl: number;
+  photoBase64?: string;
 }
 
 Deno.serve(async (req) => {
@@ -37,6 +38,7 @@ Deno.serve(async (req) => {
       citizenPixType,
       liters,
       rewardBrl,
+      photoBase64,
     }: ProcessInput = await req.json();
 
     if (!collectionId || !partialSignedTxBase64 || !operatorKey || !liters) {
@@ -161,6 +163,40 @@ Deno.serve(async (req) => {
       console.log("[13] public.oil_collections updated, pix_status:", pixStatus);
     } catch (dbErr) {
       console.error("[13] public update error (non-fatal):", (dbErr as Error).message);
+    }
+
+    // 8. Upload da foto via service role (evita RLS no client)
+    if (photoBase64) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const base64Data = photoBase64.includes(",") ? photoBase64.split(",")[1] : photoBase64;
+        const photoBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+        const photoPath = `${operatorKey}/${collectionId}.jpg`;
+
+        const uploadRes = await fetch(
+          `${supabaseUrl}/storage/v1/object/collection-photos/${photoPath}`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${serviceKey}`,
+              "Content-Type": "image/jpeg",
+              "x-upsert": "true",
+            },
+            body: photoBytes,
+          },
+        );
+
+        if (uploadRes.ok) {
+          const photoUrl = `${supabaseUrl}/storage/v1/object/public/collection-photos/${photoPath}`;
+          await sql`UPDATE chainoil.collections SET photo_url = ${photoUrl} WHERE id = ${collectionId}`;
+          console.log("[14] photo uploaded:", photoUrl);
+        } else {
+          console.error("[14] photo upload failed:", uploadRes.status, await uploadRes.text());
+        }
+      } catch (photoErr) {
+        console.error("[14] photo upload error (non-fatal):", (photoErr as Error).message);
+      }
     }
 
     // ── Resumo da transação ChainOil ──────────────────────────────────────────

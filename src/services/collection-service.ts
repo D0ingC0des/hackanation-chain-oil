@@ -47,6 +47,7 @@ export interface ProcessCollectionInput {
   citizenPixType?: PixType;
   liters: number;
   rewardBrl: number;
+  photoBase64?: string;
 }
 
 export interface CollectionSummary {

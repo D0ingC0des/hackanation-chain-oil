@@ -9,7 +9,6 @@ import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 import {
   prepareCollection,
   processCollection,
-  uploadCollectionPhoto,
 } from "@/services/collection-service";
 import { type PixType } from "@/constants/pix";
 import { PENDING_PHOTO_KEY } from "@/constants/session";
@@ -87,8 +86,11 @@ function ProcessingPage() {
         });
         const signedBase64 = btoa(String.fromCharCode(...signedBytes));
 
-        // Step 3: process — edge co-signs, submits, PIX
+        // Step 3: process — edge co-signs, submits, PIX + photo upload
         setStep(4);
+        const photo = sessionStorage.getItem(PENDING_PHOTO_KEY);
+        sessionStorage.removeItem(PENDING_PHOTO_KEY);
+
         const result = await processCollection({
           collectionId,
           partialSignedTxBase64: signedBase64,
@@ -97,6 +99,7 @@ function ProcessingPage() {
           citizenPixType: t,
           liters: l,
           rewardBrl,
+          photoBase64: photo ?? undefined,
         });
         resultRef.current = { txHash: result.txHash, pixStatus: result.pixStatus };
 
@@ -121,12 +124,6 @@ function ProcessingPage() {
           console.log("PIX ID            :", s.pix.pixId);
           console.groupEnd();
           console.groupEnd();
-        }
-
-        const photo = sessionStorage.getItem(PENDING_PHOTO_KEY);
-        sessionStorage.removeItem(PENDING_PHOTO_KEY);
-        if (photo) {
-          uploadCollectionPhoto(result.collectionId, operatorKey, photo).catch(() => {});
         }
 
         setStep(5);
