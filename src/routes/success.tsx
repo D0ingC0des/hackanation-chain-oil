@@ -61,7 +61,7 @@ function SuccessPage() {
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center px-6 pt-8 pb-6 text-center">
-          <div className="w-full max-w-md lg:max-w-xl">
+          <div className="w-full max-w-md lg:max-w-xl bg-background/60 backdrop-blur-md rounded-3xl p-6 border border-border/30 shadow-elevated">
             <div className="relative size-28 mb-6 animate-pop-in mx-auto">
               <div className="absolute inset-0 rounded-full bg-success/20" />
               <div className="absolute inset-2 rounded-full bg-gradient-primary flex items-center justify-center shadow-elevated">

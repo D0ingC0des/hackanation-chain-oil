@@ -1,9 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Logo } from "@/components/Logo";
-import { getProfile, touchWalletLogin } from "@/services/profileService";
-import { useRate } from "@/hooks/use-rate";
 import {
   ShieldCheck,
   Sparkles,
@@ -16,6 +13,12 @@ import {
   X,
 } from "lucide-react";
 import heroImg from "@/assets/hero-community.jpg";
+import { Logo } from "@/components/Logo";
+import { getProfile, touchWalletLogin } from "@/services/profileService";
+import { useRate } from "@/hooks/use-rate";
+
+const WALLET_TUTORIAL_URL =
+  "https://www.youtube.com/results?search_query=como+criar+carteira+phantom+solana";
 
 export const Route = createFileRoute("/")({
   component: LoginPage,
@@ -270,6 +273,24 @@ function LoginPage() {
                 Uma carteira Solana é necessária para acessar a plataforma. É gratuita e leva menos
                 de 2 minutos para criar.
               </p>
+              <div className="flex items-center gap-3 text-sm">
+                <a
+                  href={WALLET_TUTORIAL_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-primary font-medium hover:underline"
+                >
+                  <ExternalLink className="size-3.5" />
+                  Ver tutorial em vídeo
+                </a>
+                <span className="text-muted-foreground/40">•</span>
+                <Link
+                  to="/ajuda"
+                  className="inline-flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition"
+                >
+                  Guia passo a passo
+                </Link>
+              </div>
 
               {WALLETS.map((w) => (
                 <a

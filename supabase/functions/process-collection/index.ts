@@ -8,11 +8,14 @@ const CORS = {
 
 const SOLANA_RPC = "https://api.devnet.solana.com";
 
+type PixType = "PHONE" | "CPF" | "EMAIL";
+
 interface ProcessInput {
   collectionId: string;
   partialSignedTxBase64: string;
   operatorKey: string;
   citizenPhone: string;
+  citizenPixType?: PixType;
   liters: number;
   rewardBrl: number;
 }
@@ -30,6 +33,7 @@ Deno.serve(async (req) => {
       partialSignedTxBase64,
       operatorKey,
       citizenPhone,
+      citizenPixType,
       liters,
       rewardBrl,
     }: ProcessInput = await req.json();
@@ -93,7 +97,7 @@ Deno.serve(async (req) => {
           type: "PIX_KEY",
           value: Math.round(rewardBrl * 100),
           destinationAlias: citizenPhone,
-          destinationAliasType: "PHONE",
+          destinationAliasType: citizenPixType ?? "PHONE",
           correlationID: collectionId,
           comment: `ChainOil - coleta de ${liters}L de óleo usado`,
           autoApprove: true,

@@ -10,6 +10,7 @@ import {
   prepareCollection,
   processCollection,
   uploadCollectionPhoto,
+  type PixType,
 } from "@/services/collection-service";
 import { useRate } from "@/hooks/use-rate";
 
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/processing")({
   validateSearch: (s: Record<string, unknown>) => ({
     l: typeof s.l === "number" ? s.l : Number(s.l) || 1,
     p: typeof s.p === "string" ? s.p : "",
+    t: (["PHONE", "CPF", "EMAIL"].includes(s.t as string) ? s.t : "PHONE") as PixType,
   }),
   head: () => ({
     meta: [
@@ -42,7 +44,7 @@ const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 function ProcessingPage() {
   useAuthGuard();
-  const { l, p } = Route.useSearch();
+  const { l, p, t } = Route.useSearch();
   const navigate = useNavigate();
   const { publicKey, signTransaction } = useWallet();
   const { rate } = useRate();
@@ -72,7 +74,8 @@ function ProcessingPage() {
 
         // Step 2: partial-sign — wallet popup
         setStep(3);
-        if (!signTransaction) throw new Error("Carteira não suporta assinatura. Reconecte sua carteira.");
+        if (!signTransaction)
+          throw new Error("Carteira não suporta assinatura. Reconecte sua carteira.");
         const txBytes = Uint8Array.from(atob(txBase64), (c) => c.charCodeAt(0));
         const tx = Transaction.from(txBytes);
         const signedTx = await signTransaction(tx);
@@ -89,6 +92,7 @@ function ProcessingPage() {
           partialSignedTxBase64: signedBase64,
           operatorKey,
           citizenPhone: p,
+          citizenPixType: t,
           liters: l,
           rewardBrl,
         });
@@ -108,11 +112,11 @@ function ProcessingPage() {
     }
 
     run();
-  }, [publicKey, signTransaction, l, p, rate]);
+  }, [publicKey, signTransaction, l, p, t, rate]);
 
   useEffect(() => {
     if (step < STEPS.length) return;
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       const r = resultRef.current;
       navigate({
         to: "/success",
@@ -124,7 +128,7 @@ function ProcessingPage() {
         },
       });
     }, 500);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [step, navigate, l, p]);
 
   const progress = Math.min(100, (step / STEPS.length) * 100);

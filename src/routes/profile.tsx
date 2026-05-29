@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
 import {
   Copy,
   CheckCheck,
@@ -15,9 +15,13 @@ import {
   Loader2,
   Globe,
   ArrowLeft,
+  Droplets,
 } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { getProfile, type WalletProfile } from "@/services/profileService";
+
+const COT_MINT = new PublicKey("4fPShVRxVyF2T7CY7hwzpDeMhKFP3M5GrPpXSRiAi8KJ");
+const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -40,6 +44,7 @@ function ProfilePage() {
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<WalletProfile | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
+  const [cotBalance, setCotBalance] = useState<number | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -61,6 +66,24 @@ function ProfilePage() {
       .finally(() => setLoadingBalance(false));
   }, [connection, publicKey]);
 
+  useEffect(() => {
+    if (!publicKey) return;
+    connection
+      .getTokenAccountsByOwner(publicKey, {
+        programId: TOKEN_2022_PROGRAM_ID,
+        mint: COT_MINT,
+      })
+      .then(({ value: accounts }) => {
+        let total = 0n;
+        for (const { account } of accounts) {
+          const view = new DataView(account.data.buffer, account.data.byteOffset);
+          total += view.getBigUint64(64, true);
+        }
+        setCotBalance(Number(total));
+      })
+      .catch(() => setCotBalance(0));
+  }, [connection, publicKey]);
+
   function handleCopy() {
     if (!publicKey) return;
     navigator.clipboard.writeText(publicKey.toBase58());
@@ -71,7 +94,7 @@ function ProfilePage() {
   const address = publicKey?.toBase58() ?? "";
 
   return (
-    <div className="min-h-screen bg-background pb-28 lg:pb-8">
+    <div className="min-h-screen bg-secondary/30 pb-28 lg:pb-8">
       <div className="max-w-2xl mx-auto px-4 pt-6 lg:pt-10 space-y-4">
         <button
           type="button"
@@ -83,7 +106,7 @@ function ProfilePage() {
         </button>
 
         {/* Carteira */}
-        <section className="rounded-3xl bg-card border border-border p-5 space-y-4">
+        <section className="rounded-3xl bg-card/80 border border-border p-5 space-y-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             <Wallet className="size-3.5" />
             Carteira Solana
@@ -123,7 +146,7 @@ function ProfilePage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-secondary/60 p-3">
               <p className="text-xs text-muted-foreground mb-1">Saldo SOL</p>
               {loadingBalance ? (
@@ -132,6 +155,20 @@ function ProfilePage() {
                 <p className="text-lg font-bold">
                   {balance !== null ? balance.toFixed(4) : "—"}
                   <span className="text-xs font-normal text-muted-foreground ml-1">SOL</span>
+                </p>
+              )}
+            </div>
+            <div className="rounded-2xl bg-primary/10 p-3">
+              <div className="flex items-center gap-1 mb-1">
+                <Droplets className="size-3 text-primary" />
+                <p className="text-xs text-primary font-semibold">COT</p>
+              </div>
+              {cotBalance === null ? (
+                <Loader2 className="size-4 animate-spin text-muted-foreground" />
+              ) : (
+                <p className="text-lg font-bold text-primary">
+                  {cotBalance}
+                  <span className="text-xs font-normal text-primary/70 ml-1">tokens</span>
                 </p>
               )}
             </div>
@@ -152,7 +189,7 @@ function ProfilePage() {
         </section>
 
         {/* Perfil */}
-        <section className="rounded-3xl bg-card border border-border p-5 space-y-4">
+        <section className="rounded-3xl bg-card/80 border border-border p-5 space-y-4 backdrop-blur-sm">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
             <User className="size-3.5" />
             Dados do perfil

@@ -6,6 +6,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { ChevronLeft, Droplet, Leaf, Sparkles, User, Zap } from "lucide-react";
 import { PhotoCapture } from "@/components/pages/collect/photo-capture";
 import { useRate } from "@/hooks/use-rate";
+import { type PixType } from "@/services/collection-service";
 
 export const Route = createFileRoute("/collect")({
   component: CollectPage,
@@ -21,11 +22,24 @@ export const Route = createFileRoute("/collect")({
   }),
 });
 
+const PIX_OPTIONS: { type: PixType; label: string; placeholder: string }[] = [
+  { type: "PHONE", label: "Celular", placeholder: "(11) 90000-0000" },
+  { type: "CPF", label: "CPF", placeholder: "000.000.000-00" },
+  { type: "EMAIL", label: "E-mail", placeholder: "cidadao@email.com" },
+];
+
+const PIX_LABELS: Record<PixType, string> = {
+  PHONE: "Celular do cidadão",
+  CPF: "CPF do cidadão",
+  EMAIL: "E-mail do cidadão",
+};
+
 function CollectPage() {
   useAuthGuard();
   const navigate = useNavigate();
   const { rate } = useRate();
-  const [phone, setPhone] = useState("");
+  const [pixType, setPixType] = useState<PixType>("PHONE");
+  const [pixKey, setPixKey] = useState("");
   const [liters, setLiters] = useState<number>(0);
   const [photo, setPhoto] = useState<string | null>(null);
 
@@ -36,10 +50,30 @@ function CollectPage() {
     return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
   };
 
+  const formatCPF = (v: string) => {
+    const d = v.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 3) return d;
+    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  };
+
+  function handlePixKeyChange(raw: string) {
+    if (pixType === "PHONE") setPixKey(formatPhone(raw));
+    else if (pixType === "CPF") setPixKey(formatCPF(raw));
+    else setPixKey(raw);
+  }
+
   const reward = useMemo(() => (liters * rate).toFixed(2).replace(".", ","), [liters, rate]);
   const water = liters * 1000;
   const co2 = (liters * 1.5).toFixed(1);
-  const canSubmit = phone.replace(/\D/g, "").length >= 10 && liters > 0;
+
+  const canSubmit = useMemo(() => {
+    if (liters <= 0) return false;
+    if (pixType === "PHONE") return pixKey.replace(/\D/g, "").length >= 10;
+    if (pixType === "CPF") return pixKey.replace(/\D/g, "").length === 11;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pixKey);
+  }, [pixKey, pixType, liters]);
 
   function handleConfirm() {
     if (photo) {
@@ -47,7 +81,10 @@ function CollectPage() {
     } else {
       sessionStorage.removeItem("chainoil_pending_photo");
     }
-    navigate({ to: "/processing", search: { l: liters, p: phone } as { l: number; p: string } });
+    navigate({
+      to: "/processing",
+      search: { l: liters, p: pixKey, t: pixType } as { l: number; p: string; t: PixType },
+    });
   }
 
   return (
@@ -67,7 +104,7 @@ function CollectPage() {
         </header>
 
         {/* ── Desktop header ── */}
-        <div className="hidden lg:block px-8 pt-8 pb-1">
+        <div className="hidden lg:block px-8 pt-6 pb-4 mx-4 mt-4 mb-0 rounded-2xl bg-background/70 backdrop-blur-md border border-border/40">
           <h1 className="text-2xl font-extrabold tracking-tight">Nova coleta</h1>
           <p className="text-foreground/80 text-sm mt-0.5">
             Registre o óleo coletado e gere a recompensa instantânea.
@@ -78,19 +115,43 @@ function CollectPage() {
         <div className="lg:grid lg:grid-cols-[1fr_380px] lg:gap-8 lg:px-8 lg:pt-6">
           {/* LEFT: form */}
           <div className="px-5 lg:px-0 pt-2 lg:pt-0 space-y-3">
-            {/* Phone */}
-            <div className="bg-card rounded-3xl p-4 shadow-soft border border-border">
-              <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                <User className="size-3.5" /> Celular do cidadão
-              </label>
-              <input
-                type="tel"
-                inputMode="numeric"
-                placeholder="(11) 90000-0000"
-                value={phone}
-                onChange={(e) => setPhone(formatPhone(e.target.value))}
-                className="mt-2 w-full h-12 px-4 rounded-2xl bg-secondary text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
-              />
+            {/* PIX key */}
+            <div className="bg-card rounded-3xl p-4 shadow-soft border border-border space-y-3">
+              {/* Seletor de tipo */}
+              <div className="flex gap-2">
+                {PIX_OPTIONS.map(({ type, label }) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => {
+                      setPixType(type);
+                      setPixKey("");
+                    }}
+                    className={`flex-1 h-9 rounded-xl text-sm font-semibold border transition ${
+                      pixType === type
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-secondary border-border text-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Input dinâmico */}
+              <div>
+                <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <User className="size-3.5" /> {PIX_LABELS[pixType]}
+                </label>
+                <input
+                  type={pixType === "EMAIL" ? "email" : "text"}
+                  inputMode={pixType === "EMAIL" ? "email" : "numeric"}
+                  placeholder={PIX_OPTIONS.find((o) => o.type === pixType)?.placeholder}
+                  value={pixKey}
+                  onChange={(e) => handlePixKeyChange(e.target.value)}
+                  className="mt-2 w-full h-12 px-4 rounded-2xl bg-secondary text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
             </div>
 
             {/* Liters */}

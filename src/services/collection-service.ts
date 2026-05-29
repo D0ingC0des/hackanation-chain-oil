@@ -5,6 +5,8 @@ const table = () => (supabase as any).from("oil_collections");
 
 // ── Option B: prepare (build tx) ───────────────────────────────────────────
 
+export type PixType = "PHONE" | "CPF" | "EMAIL";
+
 export interface PrepareCollectionInput {
   operatorKey: string;
   citizenPhone: string;
@@ -35,6 +37,7 @@ export interface ProcessCollectionInput {
   partialSignedTxBase64: string;
   operatorKey: string;
   citizenPhone: string;
+  citizenPixType?: PixType;
   liters: number;
   rewardBrl: number;
 }
@@ -143,4 +146,21 @@ export async function getGlobalStats(): Promise<CollectionStats> {
   const { data, error } = await table().select("liters, reward_brl");
   if (error || !data) return { totalLiters: 0, totalPix: 0 };
   return sumRows(data);
+}
+
+export interface CollectionRecord {
+  id: string;
+  citizen_phone: string;
+  reward_brl: number;
+  created_at: string;
+}
+
+export async function getMyHistory(operatorKey: string): Promise<CollectionRecord[]> {
+  const { data, error } = await table()
+    .select("id, citizen_phone, reward_brl, created_at")
+    .eq("operator_key", operatorKey)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error || !data) return [];
+  return data;
 }

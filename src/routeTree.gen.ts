@@ -10,18 +10,24 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuccessRouteImport } from './routes/success'
+import { Route as ResetRouteImport } from './routes/reset'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProcessingRouteImport } from './routes/processing'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as CollectRouteImport } from './routes/collect'
+import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ApiOilRateRouteImport } from './routes/api/oil-rate'
 
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetRoute = ResetRouteImport.update({
+  id: '/reset',
+  path: '/reset',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -49,6 +55,11 @@ const CollectRoute = CollectRouteImport.update({
   path: '/collect',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AjudaRoute = AjudaRouteImport.update({
+  id: '/ajuda',
+  path: '/ajuda',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -59,92 +70,94 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiOilRateRoute = ApiOilRateRouteImport.update({
-  id: '/api/oil-rate',
-  path: '/api/oil-rate',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ajuda': typeof AjudaRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
+  '/reset': typeof ResetRoute
   '/success': typeof SuccessRoute
-  '/api/oil-rate': typeof ApiOilRateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ajuda': typeof AjudaRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
+  '/reset': typeof ResetRoute
   '/success': typeof SuccessRoute
-  '/api/oil-rate': typeof ApiOilRateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/ajuda': typeof AjudaRoute
   '/collect': typeof CollectRoute
   '/dashboard': typeof DashboardRoute
   '/onboarding': typeof OnboardingRoute
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
+  '/reset': typeof ResetRoute
   '/success': typeof SuccessRoute
-  '/api/oil-rate': typeof ApiOilRateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/collect'
     | '/dashboard'
     | '/onboarding'
     | '/processing'
     | '/profile'
+    | '/reset'
     | '/success'
-    | '/api/oil-rate'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/collect'
     | '/dashboard'
     | '/onboarding'
     | '/processing'
     | '/profile'
+    | '/reset'
     | '/success'
-    | '/api/oil-rate'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/ajuda'
     | '/collect'
     | '/dashboard'
     | '/onboarding'
     | '/processing'
     | '/profile'
+    | '/reset'
     | '/success'
-    | '/api/oil-rate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AjudaRoute: typeof AjudaRoute
   CollectRoute: typeof CollectRoute
   DashboardRoute: typeof DashboardRoute
   OnboardingRoute: typeof OnboardingRoute
   ProcessingRoute: typeof ProcessingRoute
   ProfileRoute: typeof ProfileRoute
+  ResetRoute: typeof ResetRoute
   SuccessRoute: typeof SuccessRoute
-  ApiOilRateRoute: typeof ApiOilRateRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -154,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/success'
       fullPath: '/success'
       preLoaderRoute: typeof SuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset': {
+      id: '/reset'
+      path: '/reset'
+      fullPath: '/reset'
+      preLoaderRoute: typeof ResetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -191,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CollectRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ajuda': {
+      id: '/ajuda'
+      path: '/ajuda'
+      fullPath: '/ajuda'
+      preLoaderRoute: typeof AjudaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -205,37 +232,21 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/oil-rate': {
-      id: '/api/oil-rate'
-      path: '/api/oil-rate'
-      fullPath: '/api/oil-rate'
-      preLoaderRoute: typeof ApiOilRateRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AjudaRoute: AjudaRoute,
   CollectRoute: CollectRoute,
   DashboardRoute: DashboardRoute,
   OnboardingRoute: OnboardingRoute,
   ProcessingRoute: ProcessingRoute,
   ProfileRoute: ProfileRoute,
+  ResetRoute: ResetRoute,
   SuccessRoute: SuccessRoute,
-  ApiOilRateRoute: ApiOilRateRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
