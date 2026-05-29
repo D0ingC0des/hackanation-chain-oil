@@ -8,8 +8,8 @@ import {
   Keypair,
 } from "npm:@solana/web3.js@1";
 import {
-  getAssociatedTokenAddressSync,
   createMintToInstruction,
+  createInitializeAccount3Instruction,
   TOKEN_2022_PROGRAM_ID,
 } from "npm:@solana/spl-token@0.4";
 import postgres from "npm:postgres@3";
@@ -21,28 +21,21 @@ const CORS = {
 
 const COT_MINT = new PublicKey("4fPShVRxVyF2T7CY7hwzpDeMhKFP3M5GrPpXSRiAi8KJ");
 const MEMO_PROGRAM_ID = new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
-const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1bwd");
 const SOLANA_RPC = "https://api.devnet.solana.com";
 
-/** Cria instrução ATA idempotente sem depender de função específica do spl-token */
-function makeCreateAtaIdempotentInstruction(
-  payer: PublicKey,
-  ata: PublicKey,
-  owner: PublicKey,
-  mint: PublicKey,
-): TransactionInstruction {
-  return new TransactionInstruction({
-    programId: ASSOCIATED_TOKEN_PROGRAM_ID,
-    keys: [
-      { pubkey: payer, isSigner: true, isWritable: true },
-      { pubkey: ata, isSigner: false, isWritable: true },
-      { pubkey: owner, isSigner: false, isWritable: false },
-      { pubkey: mint, isSigner: false, isWritable: false },
-      { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-      { pubkey: TOKEN_2022_PROGRAM_ID, isSigner: false, isWritable: false },
-    ],
-    data: new Uint8Array([1]), // 1 = CREATE_IDEMPOTENT
-  });
+// Basic Token-2022 account without extensions
+const TOKEN_ACCOUNT_SIZE = 165;
+
+// Deterministic token account per operator using treasury as seed base.
+// Avoids the ATA Program entirely — createAccountWithSeed only needs treasury to sign.
+// ATA Program (ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1bwd) is absent from
+// devnet/testnet on Solana v4.0.0-rc.0.
+function operatorTokenAccountAddress(
+  treasuryPubkey: PublicKey,
+  operatorKey: string,
+): Promise<PublicKey> {
+  const seed = operatorKey.slice(0, 32); // seed max = 32 bytes
+  return PublicKey.createWithSeed(treasuryPubkey, seed, TOKEN_2022_PROGRAM_ID);
 }
 
 interface PrepareInput {
@@ -102,7 +95,8 @@ Deno.serve(async (req) => {
     const connection = new Connection(SOLANA_RPC, "confirmed");
     const { blockhash } = await connection.getLatestBlockhash("confirmed");
 
-    const operatorAta = getAssociatedTokenAddressSync(COT_MINT, operatorPubkey, false, TOKEN_2022_PROGRAM_ID);
+    // Endereço determinístico por operador — não depende do ATA Program
+    const operatorTokenAcc = await operatorTokenAccountAddress(treasuryPubkey, operatorKey);
 
     const litersML = Math.round(liters * 1000);
     const timestamp = Date.now();
@@ -112,10 +106,33 @@ Deno.serve(async (req) => {
     tx.recentBlockhash = blockhash;
     tx.feePayer = treasuryPubkey;
 
-    // 1. Criar ATA do operador para COT (idempotente)
-    tx.add(
-      makeCreateAtaIdempotentInstruction(treasuryPubkey, operatorAta, operatorPubkey, COT_MINT),
-    );
+    // 1. Criar conta de token do operador se ainda não existir
+    //    Usa createAccountWithSeed (treasury como base) — evita o ATA Program
+    const tokenAccInfo = await connection.getAccountInfo(operatorTokenAcc);
+    if (!tokenAccInfo) {
+      const rentExempt = await connection.getMinimumBalanceForRentExemption(TOKEN_ACCOUNT_SIZE);
+
+      tx.add(
+        SystemProgram.createAccountWithSeed({
+          fromPubkey: treasuryPubkey,
+          newAccountPubkey: operatorTokenAcc,
+          basePubkey: treasuryPubkey,
+          seed: operatorKey.slice(0, 32),
+          lamports: rentExempt,
+          space: TOKEN_ACCOUNT_SIZE,
+          programId: TOKEN_2022_PROGRAM_ID,
+        }),
+      );
+
+      tx.add(
+        createInitializeAccount3Instruction(
+          operatorTokenAcc,
+          COT_MINT,
+          operatorPubkey,
+          TOKEN_2022_PROGRAM_ID,
+        ),
+      );
+    }
 
     // 2. Memo de atestação — operador precisa assinar
     tx.add(
@@ -126,12 +143,11 @@ Deno.serve(async (req) => {
       }),
     );
 
-    // 3. MintTo COT → ATA do operador (mint authority = tesouraria)
-    //    1 COT por litro, 0 decimais → BigInt(liters) inteiros
+    // 3. MintTo COT → conta do operador (1 COT por litro inteiro, 0 decimais)
     tx.add(
       createMintToInstruction(
         COT_MINT,
-        operatorAta,
+        operatorTokenAcc,
         treasuryPubkey,
         BigInt(Math.round(liters)),
         [],
