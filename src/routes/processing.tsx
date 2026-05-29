@@ -60,6 +60,7 @@ function ProcessingPage() {
     const operatorKey = publicKey.toBase58();
 
     async function run() {
+      console.clear();
       try {
         setStep(1);
         await delay(400);
