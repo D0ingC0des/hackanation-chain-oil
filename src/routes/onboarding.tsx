@@ -4,6 +4,8 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { Logo } from "@/components/Logo";
 import { Building2, CheckCircle2, Loader2 } from "lucide-react";
 import { createProfile } from "@/services/profileService";
+import { maskCEP } from "@/utils/formatters";
+import type { OnboardingForm } from "@/types/onboarding";
 
 export const Route = createFileRoute("/onboarding")({
   component: OnboardingPage,
@@ -15,29 +17,13 @@ export const Route = createFileRoute("/onboarding")({
   }),
 });
 
-function maskCep(v: string) {
-  return v
-    .replace(/\D/g, "")
-    .replace(/^(\d{5})(\d)/, "$1-$2")
-    .slice(0, 9);
-}
-
-interface FormState {
-  business_name: string;
-  cep: string;
-  street: string;
-  neighborhood: string;
-  city: string;
-  state: string;
-}
-
 const INPUT_CLASS =
   "w-full h-12 rounded-2xl bg-card border border-border px-4 text-sm placeholder:text-muted-foreground focus:outline-none focus:border-primary/60 transition";
 
 function OnboardingPage() {
   const navigate = useNavigate();
   const { connected, connecting, publicKey } = useWallet();
-  const [form, setForm] = useState<FormState>({
+  const [form, setForm] = useState<OnboardingForm>({
     business_name: "",
     cep: "",
     street: "",
@@ -53,7 +39,7 @@ function OnboardingPage() {
     if (!connecting && !connected) navigate({ to: "/", replace: true });
   }, [connected, connecting, navigate]);
 
-  function set(field: keyof FormState, value: string) {
+  function set(field: keyof OnboardingForm, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -143,7 +129,7 @@ function OnboardingPage() {
               <input
                 type="text"
                 value={form.cep}
-                onChange={(e) => set("cep", maskCep(e.target.value))}
+                onChange={(e) => set("cep", maskCEP(e.target.value))}
                 onBlur={handleCepBlur}
                 placeholder="87000-000"
                 required

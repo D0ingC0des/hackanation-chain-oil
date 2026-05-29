@@ -1,7 +1,7 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
-import { LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import {
   Copy,
   CheckCheck,
@@ -19,9 +19,9 @@ import {
 } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { getProfile, type WalletProfile } from "@/services/profileService";
-
-const COT_MINT = new PublicKey("4fPShVRxVyF2T7CY7hwzpDeMhKFP3M5GrPpXSRiAi8KJ");
-const TOKEN_2022_PROGRAM_ID = new PublicKey("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb");
+import { useCotBalance } from "@/hooks/use-cot-balance";
+import { ProfileRow } from "@/components/ProfileRow";
+import { truncate } from "@/utils/formatters";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -30,21 +30,17 @@ export const Route = createFileRoute("/profile")({
   }),
 });
 
-function truncate(key: string) {
-  return `${key.slice(0, 4)}...${key.slice(-4)}`;
-}
-
 function ProfilePage() {
   useAuthGuard();
 
   const router = useRouter();
   const { publicKey, wallet } = useWallet();
   const { connection } = useConnection();
+  const cotBalance = useCotBalance();
 
   const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<WalletProfile | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
-  const [cotBalance, setCotBalance] = useState<number | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingBalance, setLoadingBalance] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -64,24 +60,6 @@ function ProfilePage() {
       .getBalance(publicKey)
       .then((lamports) => setBalance(lamports / LAMPORTS_PER_SOL))
       .finally(() => setLoadingBalance(false));
-  }, [connection, publicKey]);
-
-  useEffect(() => {
-    if (!publicKey) return;
-    connection
-      .getTokenAccountsByOwner(publicKey, {
-        programId: TOKEN_2022_PROGRAM_ID,
-        mint: COT_MINT,
-      })
-      .then(({ value: accounts }) => {
-        let total = 0n;
-        for (const { account } of accounts) {
-          const view = new DataView(account.data.buffer, account.data.byteOffset);
-          total += view.getBigUint64(64, true);
-        }
-        setCotBalance(Number(total));
-      })
-      .catch(() => setCotBalance(0));
   }, [connection, publicKey]);
 
   function handleCopy() {
@@ -218,28 +196,6 @@ function ProfilePage() {
             <p className="text-sm text-muted-foreground text-center py-4">Perfil não encontrado.</p>
           )}
         </section>
-      </div>
-    </div>
-  );
-}
-
-function ProfileRow({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="size-8 rounded-xl bg-secondary flex items-center justify-center shrink-0 mt-0.5">
-        <Icon className="size-3.5 text-muted-foreground" />
-      </div>
-      <div className="min-w-0">
-        <p className="text-[11px] text-muted-foreground">{label}</p>
-        <p className="text-sm font-medium break-words">{value}</p>
       </div>
     </div>
   );

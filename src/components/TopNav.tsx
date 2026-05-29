@@ -3,10 +3,7 @@ import { LogOut, Plus, BarChart2, User, Wallet } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { Logo } from "./Logo";
 import { useWallet } from "@solana/wallet-adapter-react";
-
-function truncate(key: string) {
-  return `${key.slice(0, 4)}...${key.slice(-4)}`;
-}
+import { truncate } from "@/utils/formatters";
 
 const NAV_ITEMS = [
   { to: "/dashboard" as const, label: "Meu impacto", icon: BarChart2 },

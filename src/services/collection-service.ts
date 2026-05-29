@@ -1,4 +1,7 @@
 import { supabase, supabaseAnonKey } from "@/lib/supabase";
+import type { PixType } from "@/constants/pix";
+
+export type { PixType } from "@/constants/pix";
 
 const fnHeaders = () => ({
   apikey: supabaseAnonKey,
@@ -9,8 +12,6 @@ const fnHeaders = () => ({
 const table = () => (supabase as any).from("oil_collections");
 
 // ── Option B: prepare (build tx) ───────────────────────────────────────────
-
-export type PixType = "PHONE" | "CPF" | "EMAIL";
 
 export interface PrepareCollectionInput {
   operatorKey: string;

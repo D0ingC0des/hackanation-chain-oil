@@ -2,20 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { MobileShell } from "@/components/MobileShell";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useDashboard, useCollectionHistory } from "@/hooks/use-dashboard";
-import {
-  ChevronLeft,
-  Droplets,
-  FlaskConical,
-  Leaf,
-  Loader2,
-  Mail,
-  Phone,
-  Plus,
-  TrendingUp,
-  User,
-} from "lucide-react";
-import type { PixType } from "@/services/collection-service";
+import { ChevronLeft, Droplets, FlaskConical, Leaf, Loader2, Plus, TrendingUp } from "lucide-react";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
+import { MetricCard } from "@/components/MetricCard";
+import { PIX_ICON } from "@/constants/pix";
+import { fmtPixKey, fmtBRL, fmtNumber, fmtDate } from "@/utils/formatters";
 
 export const Route = createFileRoute("/dashboard")({
   component: DashboardPage,
@@ -29,46 +20,6 @@ export const Route = createFileRoute("/dashboard")({
     ],
   }),
 });
-
-function fmtNumber(n: number, decimals = 0) {
-  return new Intl.NumberFormat("pt-BR", {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(n);
-}
-
-function fmtPhone(raw: string) {
-  const d = raw.replace(/\D/g, "");
-  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
-  return raw;
-}
-
-function fmtCpf(raw: string) {
-  const d = raw.replace(/\D/g, "");
-  if (d.length === 11) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-  return raw;
-}
-
-function fmtPixKey(raw: string, type: PixType = "PHONE") {
-  if (type === "PHONE") return fmtPhone(raw);
-  if (type === "CPF") return fmtCpf(raw);
-  return raw; // EMAIL — exibir como está
-}
-
-const PIX_ICON: Record<PixType, typeof Phone> = {
-  PHONE: Phone,
-  CPF: User,
-  EMAIL: Mail,
-};
-
-function fmtBrl(value: number) {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-}
-
-function fmtDate(iso: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(iso));
-}
 
 function DashboardPage() {
   useAuthGuard();
@@ -190,7 +141,7 @@ function DashboardPage() {
                       </p>
                     </div>
                     <p className="text-sm font-bold text-primary shrink-0">
-                      {fmtBrl(Number(record.reward_brl))}
+                      {fmtBRL(Number(record.reward_brl))}
                     </p>
                   </div>
                 );
@@ -201,41 +152,6 @@ function DashboardPage() {
 
         <div className="h-4" />
       </MobileShell>
-    </div>
-  );
-}
-
-function MetricCard({
-  icon: Icon,
-  value,
-  label,
-  tone,
-  loading,
-}: {
-  icon: typeof Droplets;
-  value: string;
-  label: string;
-  tone: "water" | "primary" | "reward";
-  loading: boolean;
-}) {
-  const map = {
-    water: "bg-water/15 text-water",
-    primary: "bg-primary/10 text-primary",
-    reward: "bg-reward/25 text-reward-foreground",
-  } as const;
-  return (
-    <div className="rounded-3xl bg-card border border-border p-4 shadow-soft">
-      <div className={`size-10 rounded-2xl flex items-center justify-center ${map[tone]}`}>
-        <Icon className="size-5" />
-      </div>
-      <div className="mt-3 min-h-[28px] flex items-center">
-        {loading ? (
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
-        ) : (
-          <span className="text-xl font-extrabold tracking-tight">{value}</span>
-        )}
-      </div>
-      <div className="text-[11px] text-muted-foreground leading-tight mt-0.5">{label}</div>
     </div>
   );
 }

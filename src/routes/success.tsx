@@ -4,6 +4,7 @@ import { useRate } from "@/hooks/use-rate";
 import { AlertCircle, Check, Droplets, ExternalLink, Leaf, Trophy } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
+import { calcWater, calcCO2 } from "@/constants/impact";
 
 export const Route = createFileRoute("/success")({
   component: SuccessPage,
@@ -29,8 +30,8 @@ function SuccessPage() {
   const { l, p, txHash, pixStatus } = Route.useSearch();
   const { rate } = useRate();
   const reward = (l * rate).toFixed(2).replace(".", ",");
-  const water = l * 1000;
-  const co2 = (l * 1.5).toFixed(1);
+  const water = calcWater(l);
+  const co2 = calcCO2(l).toFixed(1);
 
   const isMock = pixStatus === "mock_pending";
   const isFailed = pixStatus === "failed";

@@ -1,8 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Lock, UserPlus, Loader2 } from "lucide-react";
+import { UserPlus, Loader2 } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { PinGate } from "@/components/PinGate";
+import { useAdminPin } from "@/hooks/use-admin-pin";
+import { ADMIN_PIN } from "@/constants/session";
 
 export const Route = createFileRoute("/reset")({
   component: ResetPage,
@@ -11,11 +14,8 @@ export const Route = createFileRoute("/reset")({
   }),
 });
 
-const ADMIN_PIN = import.meta.env.VITE_ADMIN_PIN as string | undefined;
-const SESSION_KEY = "chainoil_admin_auth";
-
 function ResetPage() {
-  const [authed, setAuthed] = useState(() => sessionStorage.getItem(SESSION_KEY) === "1");
+  const { authed, approve } = useAdminPin();
 
   if (!ADMIN_PIN) {
     return (
@@ -26,15 +26,7 @@ function ResetPage() {
   }
 
   if (!authed) {
-    return (
-      <PinGate
-        correctPin={ADMIN_PIN}
-        onSuccess={() => {
-          sessionStorage.setItem(SESSION_KEY, "1");
-          setAuthed(true);
-        }}
-      />
-    );
+    return <PinGate correctPin={ADMIN_PIN} onSuccess={approve} />;
   }
 
   return <ResetPanel />;
@@ -88,53 +80,6 @@ function ResetPanel() {
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function PinGate({ correctPin, onSuccess }: { correctPin: string; onSuccess: () => void }) {
-  const [pin, setPin] = useState("");
-  const [error, setError] = useState(false);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (pin === correctPin) {
-      onSuccess();
-    } else {
-      setError(true);
-      setPin("");
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <form onSubmit={handleSubmit} className="w-full max-w-xs space-y-4">
-        <div className="flex flex-col items-center gap-3 mb-2">
-          <div className="size-12 rounded-2xl bg-secondary flex items-center justify-center">
-            <Lock className="size-5 text-muted-foreground" />
-          </div>
-          <p className="text-sm font-medium">Área restrita</p>
-        </div>
-        <input
-          type="password"
-          value={pin}
-          onChange={(e) => {
-            setError(false);
-            setPin(e.target.value);
-          }}
-          autoFocus
-          placeholder="PIN de acesso"
-          className="w-full rounded-xl border border-border bg-secondary/40 px-4 py-2.5 text-sm text-center tracking-widest focus:outline-none focus:ring-2 focus:ring-primary/40"
-        />
-        {error && <p className="text-xs text-destructive text-center">PIN incorreto.</p>}
-        <button
-          type="submit"
-          disabled={!pin}
-          className="w-full rounded-xl bg-gradient-primary text-primary-foreground text-sm font-semibold py-3 disabled:opacity-50 transition"
-        >
-          Entrar
-        </button>
-      </form>
     </div>
   );
 }

@@ -1,12 +1,11 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { MobileShell } from "@/components/MobileShell";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { ChevronLeft, Droplet, Leaf, Sparkles, User, Zap } from "lucide-react";
 import { PhotoCapture } from "@/components/pages/collect/photo-capture";
-import { useRate } from "@/hooks/use-rate";
-import { type PixType } from "@/services/collection-service";
+import { PIX_OPTIONS, PIX_LABELS } from "@/constants/pix";
+import { useCollect } from "@/hooks/use-collect";
 
 export const Route = createFileRoute("/collect")({
   component: CollectPage,
@@ -22,70 +21,24 @@ export const Route = createFileRoute("/collect")({
   }),
 });
 
-const PIX_OPTIONS: { type: PixType; label: string; placeholder: string }[] = [
-  { type: "PHONE", label: "Celular", placeholder: "(11) 90000-0000" },
-  { type: "CPF", label: "CPF", placeholder: "000.000.000-00" },
-  { type: "EMAIL", label: "E-mail", placeholder: "cidadao@email.com" },
-];
-
-const PIX_LABELS: Record<PixType, string> = {
-  PHONE: "Celular do cidadão",
-  CPF: "CPF do cidadão",
-  EMAIL: "E-mail do cidadão",
-};
-
 function CollectPage() {
   useAuthGuard();
-  const navigate = useNavigate();
-  const { rate } = useRate();
-  const [pixType, setPixType] = useState<PixType>("PHONE");
-  const [pixKey, setPixKey] = useState("");
-  const [liters, setLiters] = useState<number>(0);
-  const [photo, setPhoto] = useState<string | null>(null);
-
-  const formatPhone = (v: string) => {
-    const d = v.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 2) return d;
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  };
-
-  const formatCPF = (v: string) => {
-    const d = v.replace(/\D/g, "").slice(0, 11);
-    if (d.length <= 3) return d;
-    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-  };
-
-  function handlePixKeyChange(raw: string) {
-    if (pixType === "PHONE") setPixKey(formatPhone(raw));
-    else if (pixType === "CPF") setPixKey(formatCPF(raw));
-    else setPixKey(raw);
-  }
-
-  const reward = useMemo(() => (liters * rate).toFixed(2).replace(".", ","), [liters, rate]);
-  const water = liters * 1000;
-  const co2 = (liters * 1.5).toFixed(1);
-
-  const canSubmit = useMemo(() => {
-    if (liters <= 0) return false;
-    if (pixType === "PHONE") return pixKey.replace(/\D/g, "").length >= 10;
-    if (pixType === "CPF") return pixKey.replace(/\D/g, "").length === 11;
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(pixKey);
-  }, [pixKey, pixType, liters]);
-
-  function handleConfirm() {
-    if (photo) {
-      sessionStorage.setItem("chainoil_pending_photo", photo);
-    } else {
-      sessionStorage.removeItem("chainoil_pending_photo");
-    }
-    navigate({
-      to: "/processing",
-      search: { l: liters, p: pixKey, t: pixType } as { l: number; p: string; t: PixType },
-    });
-  }
+  const {
+    pixType,
+    setPixType,
+    pixKey,
+    liters,
+    setLiters,
+    photo,
+    setPhoto,
+    reward,
+    water,
+    co2,
+    carDays,
+    canSubmit,
+    handlePixKeyChange,
+    handleConfirm,
+  } = useCollect();
 
   return (
     <div className="relative">
@@ -123,10 +76,7 @@ function CollectPage() {
                   <button
                     key={type}
                     type="button"
-                    onClick={() => {
-                      setPixType(type);
-                      setPixKey("");
-                    }}
+                    onClick={() => setPixType(type)}
                     className={`flex-1 h-9 rounded-xl text-sm font-semibold border transition ${
                       pixType === type
                         ? "bg-primary text-primary-foreground border-primary"
@@ -261,7 +211,7 @@ function CollectPage() {
                   </div>
                   <div>
                     <div className="text-sm font-bold">{co2}kg CO₂ evitado</div>
-                    <div className="text-xs text-muted-foreground">{liters * 3} dias de carro</div>
+                    <div className="text-xs text-muted-foreground">{carDays} dias de carro</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
