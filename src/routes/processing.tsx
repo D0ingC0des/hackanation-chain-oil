@@ -98,6 +98,29 @@ function ProcessingPage() {
         });
         resultRef.current = { txHash: result.txHash, pixStatus: result.pixStatus };
 
+        if (result.summary) {
+          const s = result.summary;
+          console.group("━━━ ChainOil TX SUMMARY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+          console.log("Data/hora  :", s.timestamp);
+          console.log("Coleta ID  :", result.collectionId);
+          console.groupCollapsed("─── On-chain (Solana devnet)");
+          console.log("Origem (mintAuthority)  :", s.onChain.origin);
+          console.log("Destino (token account) :", s.onChain.destination);
+          console.log("Operador (wallet)       :", s.onChain.operator);
+          console.log("COTs transferidas       :", s.onChain.cotsTransferred, "COT");
+          console.log("TX Status               :", s.onChain.txStatus);
+          console.log("TX Hash                 :", s.onChain.txHash);
+          console.log("Explorer                :", s.onChain.explorer);
+          console.groupEnd();
+          console.groupCollapsed("─── PIX");
+          console.log("Chave PIX cidadão :", s.pix.citizenKey, `(${s.pix.pixType})`);
+          console.log("Valor             : R$", s.pix.amountBrl.toFixed(2));
+          console.log("PIX Status        :", s.pix.pixStatus);
+          console.log("PIX ID            :", s.pix.pixId);
+          console.groupEnd();
+          console.groupEnd();
+        }
+
         const photo = sessionStorage.getItem("chainoil_pending_photo");
         sessionStorage.removeItem("chainoil_pending_photo");
         if (photo) {

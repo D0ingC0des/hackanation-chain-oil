@@ -1,4 +1,5 @@
-import { Connection, Transaction, Keypair } from "npm:@solana/web3.js@1";
+import { Connection, Transaction, Keypair, PublicKey } from "npm:@solana/web3.js@1";
+import { TOKEN_2022_PROGRAM_ID } from "npm:@solana/spl-token@0.4";
 import postgres from "npm:postgres@3";
 
 const CORS = {
@@ -41,52 +42,66 @@ Deno.serve(async (req) => {
     if (!collectionId || !partialSignedTxBase64 || !operatorKey || !liters) {
       return json({ success: false, error: "Parâmetros obrigatórios ausentes" }, 400);
     }
+    console.log("[1] params ok, collectionId:", collectionId);
 
     // 1. Carregar keypair da tesouraria
     const keypairEnv = Deno.env.get("TREASURY_KEYPAIR");
     if (!keypairEnv) throw new Error("TREASURY_KEYPAIR não configurada");
     const treasury = Keypair.fromSecretKey(Uint8Array.from(JSON.parse(keypairEnv)));
+    console.log("[2] treasury loaded:", treasury.publicKey.toBase58().slice(0, 8));
 
     // 2. Deserializar tx parcialmente assinada pelo operador
     const txBytes = Uint8Array.from(atob(partialSignedTxBase64), (c) => c.charCodeAt(0));
     const tx = Transaction.from(txBytes);
+    console.log("[3] tx deserialized, recentBlockhash:", tx.recentBlockhash);
 
-    // 3. Tesouraria co-assina (adiciona a assinatura do feePayer + mintTo authority)
+    // 3. Tesouraria co-assina
     tx.partialSign(treasury);
+    console.log("[4] treasury co-signed");
 
     // 4. Submeter para Solana devnet
     const connection = new Connection(SOLANA_RPC, "confirmed");
     const rawTx = tx.serialize();
-    // skipPreflight=true: devnet simulation uses a stale cache and rejects valid
-    // recent blockhashes — skip it and let the network validators decide.
+    console.log("[5] sending raw tx...");
     const txHash = await connection.sendRawTransaction(rawTx, {
       skipPreflight: true,
       maxRetries: 3,
     });
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+    console.log("[6] tx sent, hash:", txHash);
+
+    // Usa o blockhash da própria tx para confirmar (evita discrepância de altura)
+    const txBlockhash = tx.recentBlockhash!;
+    const { lastValidBlockHeight } = await connection.getLatestBlockhash("confirmed");
+    console.log("[7] confirming tx...");
     await connection.confirmTransaction(
-      { signature: txHash, blockhash, lastValidBlockHeight },
+      { signature: txHash, blockhash: txBlockhash, lastValidBlockHeight },
       "confirmed",
     );
+    console.log("[8] tx confirmed:", txHash);
 
-    console.log("tx co-assinada confirmada:", txHash);
-
-    // 5. Atualizar registro com txHash + operador (postgres direto — chainoil schema)
-    await sql`
-      UPDATE chainoil.collections
-      SET tx_sig_coassigned = ${txHash}, operator_pubkey = ${operatorKey}, pix_status = 'pending'
-      WHERE id = ${collectionId}
-    `;
+    // 5. Atualizar registro com txHash + operador
+    try {
+      await sql`
+        UPDATE chainoil.collections
+        SET tx_sig_coassigned = ${txHash}, operator_pubkey = ${operatorKey}, pix_status = 'pending'
+        WHERE id = ${collectionId}
+      `;
+      console.log("[9] chainoil.collections updated");
+    } catch (dbErr) {
+      console.error("[9] chainoil update error (non-fatal):", (dbErr as Error).message);
+    }
 
     // 6. PIX via Woovi
     const wooviKey = Deno.env.get("WOOVI_API_KEY");
-    const wooviMode = Deno.env.get("WOOVI_MODE") ?? "mock";
+    // Apenas "production" ativa o Woovi real — qualquer outro valor (ou ausência) usa mock
+    const isProduction = Deno.env.get("WOOVI_MODE") === "production";
     const wooviBase = Deno.env.get("WOOVI_API_URL") ?? "https://api.openpix.com.br";
+    console.log("[10] isProduction:", isProduction, "wooviKey set:", !!wooviKey);
 
     let pixId: string | null = null;
     let pixStatus = "pending";
 
-    if (wooviKey && wooviMode !== "mock") {
+    if (wooviKey && isProduction) {
       const wooviRes = await fetch(`${wooviBase}/api/v1/payment`, {
         method: "POST",
         headers: {
@@ -116,22 +131,58 @@ Deno.serve(async (req) => {
         pixStatus = "failed";
       }
     } else {
-      // Mock: sem chave Woovi configurada ou WOOVI_MODE=mock
+      // Mock: sem chave Woovi configurada ou WOOVI_MODE != "production"
       pixId = `mock-${collectionId}`;
       pixStatus = "mock_pending";
+      console.log("[11] mock PIX, pixId:", pixId);
     }
 
     // 7. Atualizar pix_id + pix_status em ambos os schemas
-    await sql`
-      UPDATE chainoil.collections
-      SET pix_id = ${pixId}, pix_status = ${pixStatus}
-      WHERE id = ${collectionId}
-    `;
-    await sql`
-      UPDATE public.oil_collections
-      SET pix_status = ${pixStatus}, pix_id = ${pixId}
-      WHERE id = ${collectionId}
-    `;
+    try {
+      await sql`
+        UPDATE chainoil.collections
+        SET pix_id = ${pixId}, pix_status = ${pixStatus}
+        WHERE id = ${collectionId}
+      `;
+    } catch (dbErr) {
+      console.error("[12] chainoil pix update error (non-fatal):", (dbErr as Error).message);
+    }
+    try {
+      await sql`
+        UPDATE public.oil_collections
+        SET pix_status = ${pixStatus}, pix_id = ${pixId},
+            citizen_pix_type = ${citizenPixType ?? "PHONE"}
+        WHERE id = ${collectionId}
+      `;
+      console.log("[13] public.oil_collections updated, pix_status:", pixStatus);
+    } catch (dbErr) {
+      console.error("[13] public update error (non-fatal):", (dbErr as Error).message);
+    }
+
+    // ── Resumo da transação ChainOil ──────────────────────────────────────────
+    const operatorTokenSeed = operatorKey.slice(0, 32);
+    const operatorTokenAcc = await PublicKey.createWithSeed(
+      treasury.publicKey,
+      operatorTokenSeed,
+      TOKEN_2022_PROGRAM_ID,
+    );
+    console.log("━━━ ChainOil TX SUMMARY ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("Data/hora  :", new Date().toISOString());
+    console.log("Coleta ID  :", collectionId);
+    console.log("─── On-chain (Solana devnet) ───────────────────────────");
+    console.log("Origem (mintAuthority) :", treasury.publicKey.toBase58());
+    console.log("Destino (token account):", operatorTokenAcc.toBase58());
+    console.log("Operador (wallet)      :", operatorKey);
+    console.log("COTs mintadas          :", Math.round(liters), "COT");
+    console.log("TX Status              : confirmed");
+    console.log("TX Hash                :", txHash);
+    console.log("Explorer               :", `https://explorer.solana.com/tx/${txHash}?cluster=devnet`);
+    console.log("─── PIX ────────────────────────────────────────────────");
+    console.log("Chave PIX cidadão      :", citizenPhone, `(${citizenPixType ?? "PHONE"})`);
+    console.log("Valor                  : R$", rewardBrl.toFixed(2));
+    console.log("PIX Status             :", pixStatus);
+    console.log("PIX ID                 :", pixId);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
     return json({
       success: true,
@@ -140,7 +191,26 @@ Deno.serve(async (req) => {
       pixId,
       pixStatus,
       rewardBrl,
-      mode: wooviMode,
+      mode: isProduction ? "production" : "mock",
+      summary: {
+        timestamp: new Date().toISOString(),
+        onChain: {
+          origin: treasury.publicKey.toBase58(),
+          destination: operatorTokenAcc.toBase58(),
+          operator: operatorKey,
+          cotsTransferred: Math.round(liters),
+          txHash,
+          txStatus: "confirmed",
+          explorer: `https://explorer.solana.com/tx/${txHash}?cluster=devnet`,
+        },
+        pix: {
+          citizenKey: citizenPhone,
+          pixType: citizenPixType ?? "PHONE",
+          amountBrl: rewardBrl,
+          pixId,
+          pixStatus,
+        },
+      },
     });
   } catch (err) {
     console.error("process-collection error:", err);

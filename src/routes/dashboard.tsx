@@ -8,10 +8,13 @@ import {
   FlaskConical,
   Leaf,
   Loader2,
+  Mail,
   Phone,
   Plus,
   TrendingUp,
+  User,
 } from "lucide-react";
+import type { PixType } from "@/services/collection-service";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
 
 export const Route = createFileRoute("/dashboard")({
@@ -40,6 +43,24 @@ function fmtPhone(raw: string) {
   if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   return raw;
 }
+
+function fmtCpf(raw: string) {
+  const d = raw.replace(/\D/g, "");
+  if (d.length === 11) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+  return raw;
+}
+
+function fmtPixKey(raw: string, type: PixType = "PHONE") {
+  if (type === "PHONE") return fmtPhone(raw);
+  if (type === "CPF") return fmtCpf(raw);
+  return raw; // EMAIL — exibir como está
+}
+
+const PIX_ICON: Record<PixType, typeof Phone> = {
+  PHONE: Phone,
+  CPF: User,
+  EMAIL: Mail,
+};
 
 function fmtBrl(value: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -149,23 +170,31 @@ function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {history.map((record) => (
-                <div
-                  key={record.id}
-                  className="rounded-2xl bg-card border border-border px-4 py-3 flex items-center gap-3 shadow-soft"
-                >
-                  <div className="size-9 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                    <Phone className="size-4 text-muted-foreground" />
+              {history.map((record) => {
+                const pixType = record.citizen_pix_type ?? "PHONE";
+                const PixIcon = PIX_ICON[pixType];
+                return (
+                  <div
+                    key={record.id}
+                    className="rounded-2xl bg-card border border-border px-4 py-3 flex items-center gap-3 shadow-soft"
+                  >
+                    <div className="size-9 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                      <PixIcon className="size-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">
+                        {fmtPixKey(record.citizen_phone, pixType)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {fmtDate(record.collected_at)}
+                      </p>
+                    </div>
+                    <p className="text-sm font-bold text-primary shrink-0">
+                      {fmtBrl(Number(record.reward_brl))}
+                    </p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold">{fmtPhone(record.citizen_phone)}</p>
-                    <p className="text-xs text-muted-foreground">{fmtDate(record.collected_at)}</p>
-                  </div>
-                  <p className="text-sm font-bold text-primary shrink-0">
-                    {fmtBrl(Number(record.reward_brl))}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

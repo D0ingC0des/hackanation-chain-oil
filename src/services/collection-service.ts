@@ -48,12 +48,33 @@ export interface ProcessCollectionInput {
   rewardBrl: number;
 }
 
+export interface CollectionSummary {
+  timestamp: string;
+  onChain: {
+    origin: string;
+    destination: string;
+    operator: string;
+    cotsTransferred: number;
+    txHash: string;
+    txStatus: string;
+    explorer: string;
+  };
+  pix: {
+    citizenKey: string;
+    pixType: PixType;
+    amountBrl: number;
+    pixId: string | null;
+    pixStatus: string;
+  };
+}
+
 export interface ProcessCollectionResult {
   collectionId: string;
   txHash: string | null;
   pixId: string | null;
   pixStatus: string;
   rewardBrl: number;
+  summary?: CollectionSummary;
 }
 
 export async function processCollection(
@@ -158,6 +179,7 @@ export async function getGlobalStats(): Promise<CollectionStats> {
 export interface CollectionRecord {
   id: string;
   citizen_phone: string;
+  citizen_pix_type?: PixType;
   reward_brl: number;
   collected_at: string;
   pix_status?: string;
@@ -165,7 +187,7 @@ export interface CollectionRecord {
 
 export async function getMyHistory(operatorKey: string): Promise<CollectionRecord[]> {
   const { data, error } = await table()
-    .select("id, citizen_phone, reward_brl, collected_at, pix_status")
+    .select("id, citizen_phone, citizen_pix_type, reward_brl, collected_at, pix_status")
     .eq("operator_key", operatorKey)
     .order("collected_at", { ascending: false })
     .limit(50);
