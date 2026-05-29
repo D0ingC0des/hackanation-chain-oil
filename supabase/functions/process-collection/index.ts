@@ -92,16 +92,20 @@ Deno.serve(async (req) => {
     }
 
     // 6. PIX via Woovi
-    const wooviKey = Deno.env.get("WOOVI_API_KEY");
-    // Apenas "production" ativa o Woovi real — qualquer outro valor (ou ausência) usa mock
-    const isProduction = Deno.env.get("WOOVI_MODE") === "production";
-    const wooviBase = Deno.env.get("WOOVI_API_URL") ?? "https://api.openpix.com.br";
-    console.log("[10] isProduction:", isProduction, "wooviKey set:", !!wooviKey);
+    const wooviKey = Deno.env.get("WOOVI_API_KEY") ?? "";
+    const wooviMode = (Deno.env.get("WOOVI_MODE") ?? "mock").toLowerCase();
+    const wooviBase = Deno.env.get("WOOVI_API_URL") ??
+      (wooviMode === "sandbox" ? "https://api.woovi-sandbox.com" : "https://api.woovi.com");
+    console.log("[10] wooviMode:", wooviMode, "wooviKey set:", !!wooviKey, "base:", wooviBase);
 
     let pixId: string | null = null;
     let pixStatus = "pending";
 
-    if (wooviKey && isProduction) {
+    if (wooviMode === "mock" || !wooviKey) {
+      pixId = `mock-${collectionId}`;
+      pixStatus = "mock_pending";
+      console.log("[11] mock PIX, pixId:", pixId);
+    } else {
       const wooviRes = await fetch(`${wooviBase}/api/v1/payment`, {
         method: "POST",
         headers: {
@@ -125,16 +129,12 @@ Deno.serve(async (req) => {
         try { body = JSON.parse(wooviText); } catch { /* keep null */ }
         pixId = (body?.transaction as Record<string, unknown> | undefined)?.endToEndId as string ??
           (body?.payment as Record<string, unknown> | undefined)?.correlationID as string ?? null;
-        pixStatus = "processing";
+        // Sandbox confirma inline (sem webhook real); prod aguarda webhook
+        pixStatus = wooviMode === "sandbox" ? "confirmed" : "processing";
       } else {
         console.error("Woovi error:", wooviRes.status, wooviText);
         pixStatus = "failed";
       }
-    } else {
-      // Mock: sem chave Woovi configurada ou WOOVI_MODE != "production"
-      pixId = `mock-${collectionId}`;
-      pixStatus = "mock_pending";
-      console.log("[11] mock PIX, pixId:", pixId);
     }
 
     // 7. Atualizar pix_id + pix_status em ambos os schemas
