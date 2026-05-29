@@ -2,19 +2,24 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { useWallet, useAnchorWallet } from "@solana/wallet-adapter-react";
+
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Logo } from "@/components/Logo";
 import { BlurredHeroBg } from "@/components/BlurredHeroBg";
+
 import { processCollection, uploadCollectionPhoto } from "@/services/collection-service";
+
 import { registerCollectionOnChain } from "@/services/anchor-service";
 import { useRate } from "@/hooks/use-rate";
 
 export const Route = createFileRoute("/processing")({
   component: ProcessingPage,
+
   validateSearch: (s: Record<string, unknown>) => ({
     l: typeof s.l === "number" ? s.l : Number(s.l) || 2,
     p: typeof s.p === "string" ? s.p : "",
   }),
+
   head: () => ({
     meta: [
       { title: "Validando coleta — ChainOil" },
@@ -33,61 +38,87 @@ const STEPS = [
   "Enviando seu PIX",
 ];
 
-const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const delay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 function ProcessingPage() {
   useAuthGuard();
+
   const { l, p } = Route.useSearch();
+
   const navigate = useNavigate();
+
   const { publicKey } = useWallet();
   const anchorWallet = useAnchorWallet();
+
   const { rate } = useRate();
+
   const [step, setStep] = useState(0);
+
   const savedRef = useRef(false);
 
   useEffect(() => {
     if (savedRef.current || !publicKey) return;
+
     savedRef.current = true;
 
     const operatorKey = publicKey.toBase58();
+
     const collectionId = crypto.randomUUID();
 
     async function run() {
-      setStep(1); // "Validando coleta"
-      await delay(400);
-
-      setStep(2); // "Registrando impacto ambiental" — on-chain
-      let txHash: string | undefined;
-      if (anchorWallet) {
-        try {
-          txHash = await registerCollectionOnChain({
-            wallet: anchorWallet,
-            supabaseId: collectionId,
-            litersML: Math.round(l * 1000),
-            rewardCentavos: Math.round(l * rate * 100),
-          });
-        } catch (e) {
-          console.warn("on-chain registration skipped:", e);
-        }
-      }
-
-      setStep(3); // "Enviando seu PIX" — edge function + Woovi
       try {
-        const result = await processCollection({
-          operatorKey,
-          citizenPhone: p,
-          liters: l,
-          txHash,
-          collectionId,
-        });
-        const photo = sessionStorage.getItem("chainoil_pending_photo");
-        sessionStorage.removeItem("chainoil_pending_photo");
-        if (photo) {
-          uploadCollectionPhoto(result.collectionId, operatorKey, photo).catch(() => {});
-        }
-      } catch {}
+        // Step 1
+        setStep(1);
+        await delay(400);
 
-      setStep(4); // done
+        // Step 2 - on-chain
+        setStep(2);
+
+        let txHash: string | undefined;
+
+        if (anchorWallet) {
+          try {
+            txHash = await registerCollectionOnChain({
+              wallet: anchorWallet,
+              supabaseId: collectionId,
+              litersML: Math.round(l * 1000),
+              rewardCentavos: Math.round(l * rate * 100),
+            });
+          } catch (e) {
+            console.warn("on-chain registration skipped:", e);
+          }
+        }
+
+        // Step 3 - PIX / Edge Function
+        setStep(3);
+
+        try {
+          const result = await processCollection({
+            operatorKey,
+            citizenPhone: p,
+            liters: l,
+            txHash,
+            collectionId,
+          });
+
+          const photo = sessionStorage.getItem("chainoil_pending_photo");
+
+          sessionStorage.removeItem("chainoil_pending_photo");
+
+          if (photo) {
+            uploadCollectionPhoto(result.collectionId, operatorKey, photo).catch((e) => {
+              console.warn("photo upload failed:", e);
+            });
+          }
+        } catch (e) {
+          console.warn("process collection failed:", e);
+        }
+
+        // Done
+        setStep(4);
+      } catch (e) {
+        console.error("processing page fatal error:", e);
+      }
     }
 
     run();
@@ -95,10 +126,20 @@ function ProcessingPage() {
 
   useEffect(() => {
     if (step < STEPS.length) return;
-    const t = setTimeout(
-      () => navigate({ to: "/success", search: { l, p } as { l: number; p: string } }),
-      500,
-    );
+
+    const t = setTimeout(() => {
+      navigate({
+        to: "/success",
+        search: {
+          l,
+          p,
+        } as {
+          l: number;
+          p: string;
+        },
+      });
+    }, 500);
+
     return () => clearTimeout(t);
   }, [step, navigate, l, p]);
 
@@ -107,6 +148,7 @@ function ProcessingPage() {
   return (
     <div className="relative">
       <BlurredHeroBg />
+
       <main className="min-h-screen flex flex-col">
         <div className="px-5 pt-8 lg:px-12">
           <Logo />
@@ -116,6 +158,7 @@ function ProcessingPage() {
           <div className="w-full max-w-md lg:max-w-lg">
             <div className="relative size-32 mb-8 mx-auto">
               <div className="absolute inset-0 rounded-full bg-gradient-primary animate-pulse-ring" />
+
               <div className="absolute inset-0 rounded-full bg-gradient-primary flex items-center justify-center shadow-elevated">
                 <Loader2
                   className="size-14 text-primary-foreground animate-spin"
@@ -125,6 +168,7 @@ function ProcessingPage() {
             </div>
 
             <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight">Quase lá!</h1>
+
             <p className="mt-2 text-muted-foreground text-sm max-w-xs mx-auto">
               Estamos confirmando a sua coleta de <b>{l}L</b> com segurança.
             </p>
@@ -133,7 +177,9 @@ function ProcessingPage() {
               <div className="h-2 bg-secondary rounded-full overflow-hidden">
                 <div
                   className="h-full bg-gradient-primary transition-all duration-500"
-                  style={{ width: `${progress}%` }}
+                  style={{
+                    width: `${progress}%`,
+                  }}
                 />
               </div>
 
@@ -141,6 +187,7 @@ function ProcessingPage() {
                 {STEPS.map((label, i) => {
                   const done = i < step;
                   const active = i === step;
+
                   return (
                     <li
                       key={label}
@@ -169,8 +216,11 @@ function ProcessingPage() {
                           <span className="size-2 rounded-full bg-current" />
                         )}
                       </span>
+
                       <span
-                        className={`text-sm font-medium ${done || active ? "text-foreground" : "text-muted-foreground"}`}
+                        className={`text-sm font-medium ${
+                          done || active ? "text-foreground" : "text-muted-foreground"
+                        }`}
                       >
                         {label}
                       </span>
@@ -189,3 +239,5 @@ function ProcessingPage() {
     </div>
   );
 }
+
+export default ProcessingPage;

@@ -1,33 +1,27 @@
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+export const supabase = createClient(supabaseUrl, supabaseKey);
 
-export interface OilCollection {
-  citizen_phone: string;
-  reward_brl: number;
-  collected_at: string;
-  liters: number;
-  photo_url?: string;
-  tx_hash?: string;
-  pix_status?: string;
-}
-
-export interface CollectionHistoryItem {
+export type CollectionHistoryItem = {
   citizenPhone: string;
   reward: number;
   collectedAt: string;
   liters: number;
-  photoUrl?: string;
-  txHash?: string;
-  pixStatus?: string;
-}
+  photoUrl: string | null;
+  txHash: string | null;
+  pixStatus: string | null;
+};
 
-export interface CollectionStats {
-  totalLiters: number;
-  totalRewards: number;
-  totalCollections: number;
-}
-
-function formatPhoneBr(phone: string) {
-  return phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+function formatPhoneBr(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 11) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+  }
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  }
+  return phone;
 }
 
 export async function getCollectionHistory(operatorKey: string): Promise<CollectionHistoryItem[]> {
@@ -37,11 +31,10 @@ export async function getCollectionHistory(operatorKey: string): Promise<Collect
     .eq("operator_key", operatorKey)
     .order("collected_at", { ascending: false });
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
+  if (!Array.isArray(data)) return [];
 
-  return (data as OilCollection[]).map((item) => ({
+  return data.map((item) => ({
     citizenPhone: formatPhoneBr(item.citizen_phone),
     reward: Number(item.reward_brl),
     collectedAt: item.collected_at,
@@ -52,31 +45,48 @@ export async function getCollectionHistory(operatorKey: string): Promise<Collect
   }));
 }
 
-export async function getMyStats(operatorKey: string): Promise<CollectionStats> {
-  const { data, error } = await supabase
+export async function processCollection(params: {
+  operatorKey: string;
+  citizenPhone: string;
+  liters: number;
+  txHash?: string;
+  collectionId: string;
+}): Promise<{ collectionId: string }> {
+  const { error } = await supabase.from("oil_collections").insert({
+    id: params.collectionId,
+    operator_key: params.operatorKey,
+    citizen_phone: params.citizenPhone,
+    liters: params.liters,
+    tx_hash: params.txHash ?? null,
+    pix_status: "pending",
+  });
+
+  if (error) throw error;
+
+  return { collectionId: params.collectionId };
+}
+
+export async function uploadCollectionPhoto(
+  collectionId: string,
+  operatorKey: string,
+  photoBase64: string,
+): Promise<void> {
+  const base64Data = photoBase64.replace(/^data:image\/\w+;base64,/, "");
+  const byteArray = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+  const fileName = `${operatorKey}/${collectionId}.jpg`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("collection-photos")
+    .upload(fileName, byteArray, { contentType: "image/jpeg", upsert: true });
+
+  if (uploadError) throw uploadError;
+
+  const { data: urlData } = supabase.storage.from("collection-photos").getPublicUrl(fileName);
+
+  const { error: updateError } = await supabase
     .from("oil_collections")
-    .select("liters, reward_brl")
-    .eq("operator_key", operatorKey);
+    .update({ photo_url: urlData.publicUrl })
+    .eq("id", collectionId);
 
-  if (error) {
-    throw error;
-  }
-
-  const collections = data as OilCollection[];
-
-  const totalLiters = collections.reduce(
-    (acc: number, item: OilCollection) => acc + Number(item.liters),
-    0,
-  );
-
-  const totalRewards = collections.reduce(
-    (acc: number, item: OilCollection) => acc + Number(item.reward_brl),
-    0,
-  );
-
-  return {
-    totalLiters,
-    totalRewards,
-    totalCollections: collections.length,
-  };
+  if (updateError) throw updateError;
 }

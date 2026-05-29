@@ -12,10 +12,3 @@ export const FAQ = [
     answer: "Não, apenas um número de telefone para receber o PIX.",
   },
 ];
-
-
-
-
-
-
-
