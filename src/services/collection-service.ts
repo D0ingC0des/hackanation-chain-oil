@@ -90,3 +90,32 @@ export async function uploadCollectionPhoto(
 
   if (updateError) throw updateError;
 }
+export interface CollectionStats {
+  totalLiters: number;
+  totalPix: number;
+}
+
+export async function getMyStats(operatorKey: string): Promise<CollectionStats> {
+  const { data, error } = await supabase
+    .from("oil_collections")
+    .select("liters, reward_brl")
+    .eq("operator_key", operatorKey);
+
+  if (error || !data) {
+    return {
+      totalLiters: 0,
+      totalPix: 0,
+    };
+  }
+
+  return data.reduce(
+    (acc, item) => ({
+      totalLiters: acc.totalLiters + Number(item.liters),
+      totalPix: acc.totalPix + Number(item.reward_brl),
+    }),
+    {
+      totalLiters: 0,
+      totalPix: 0,
+    },
+  );
+}

@@ -48,7 +48,7 @@ export type Database = {
           value?: string;
           updated_by?: string | null;
           updated_at?: string;
-        };                                                                              
+        };
       };
     };
   };
