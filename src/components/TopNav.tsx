@@ -13,7 +13,7 @@ const NAV_ITEMS = [
 export function TopNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { disconnect, publicKey } = useWallet();
+  const { disconnect, publicKey, select } = useWallet();
   const [expanded, setExpanded] = useState(false);
   const addressRef = useRef<HTMLButtonElement>(null);
 
@@ -30,6 +30,9 @@ export function TopNav() {
 
   async function handleLogout() {
     await disconnect();
+    // Deselect the adapter so select("Phantom") on the login page triggers a real
+    // state change — without this, select() is a no-op and connect() hangs.
+    select(null);
     navigate({ to: "/" });
   }
 

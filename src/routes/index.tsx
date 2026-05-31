@@ -46,13 +46,6 @@ const WALLETS = [
     mobileUrl: "https://phantom.app/download",
     icon: "👻",
   },
-  {
-    name: "Solflare",
-    desc: "Carteira nativa Solana, alternativa confiável",
-    desktopUrl: "https://solflare.com/download",
-    mobileUrl: "https://solflare.com/download",
-    icon: "🔥",
-  },
 ];
 
 function LoginPage() {
@@ -76,9 +69,8 @@ function LoginPage() {
   useEffect(() => setMounted(true), []);
 
   // Wallet detection only runs client-side — gate behind mounted to avoid SSR mismatch
-  const SUPPORTED = ["Phantom", "Solflare"];
   const installedWallets = mounted
-    ? wallets.filter((w) => w.readyState === "Installed" && SUPPORTED.includes(w.adapter.name))
+    ? wallets.filter((w) => w.readyState === "Installed" && w.adapter.name === "Phantom")
     : [];
   const hasWallet = installedWallets.length > 0;
 
