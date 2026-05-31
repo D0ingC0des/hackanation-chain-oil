@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
 
 const STATIC_FEATURES = [
   { icon: Droplets, label: "1.000L de água protegidos", desc: "Por cada litro de óleo coletado" },
-  { icon: Recycle, label: "Tokens OIL na Solana", desc: "Recompensas em blockchain por coleta" },
+  { icon: Recycle, label: "Tokens COT na Solana", desc: "Recompensas em blockchain por coleta" },
 ];
 
 const WALLETS = [

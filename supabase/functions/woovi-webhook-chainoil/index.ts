@@ -28,10 +28,23 @@ async function verifyHmac(rawBody: string, signature: string, secret: string): P
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions();
+  // Woovi faz GET para validar o endpoint durante o cadastro do webhook.
+  if (req.method === "GET" || req.method === "HEAD") return json({ ok: true });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   const raw = await req.text();
 
+  // Detectar ping de validação ANTES do HMAC — Woovi envia POST sem signature
+  // durante o cadastro do webhook no painel.
+  let payload: Record<string, unknown>;
+  try { payload = JSON.parse(raw); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+  if (payload.evento === "teste_webhook" || payload.event === "teste_webhook") {
+    console.log("[woovi-webhook-chainoil] ping recebido", payload);
+    return json({ received: true, ping: true });
+  }
+
+  // Para eventos reais, verificar HMAC (ou skip em INSECURE_MODE para sandbox)
   if (INSECURE_MODE) {
     const headers: Record<string, string> = {};
     req.headers.forEach((v, k) => { headers[k] = v; });
@@ -45,15 +58,6 @@ Deno.serve(async (req) => {
     if (!sig) return json({ error: "Missing signature" }, 401);
     const ok = await verifyHmac(raw, sig, WEBHOOK_SECRET);
     if (!ok) return json({ error: "Invalid signature" }, 403);
-  }
-
-  let payload: Record<string, unknown>;
-  try { payload = JSON.parse(raw); } catch { return json({ error: "Invalid JSON" }, 400); }
-
-  // Ping do painel Woovi
-  if (payload.evento === "teste_webhook" || payload.event === "teste_webhook") {
-    console.log("[woovi-webhook-chainoil] ping recebido", payload);
-    return json({ received: true, ping: true });
   }
 
   const transfer = (payload.transfer ?? payload.charge ?? payload) as Record<string, unknown>;

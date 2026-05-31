@@ -18,7 +18,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 
-const PROGRAM_ID   = new PublicKey('DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh')
+const PROGRAM_ID   = new PublicKey('49NBUcWMprgym8gqFegGEVisvcEqHe5RgHmpzmKdaaDy')
 const SOL_USD_FEED = new PublicKey('HgTtcbcmp5BeThax5AU8vg4VwK79qAvAKKegfthMvWdo')
 const RPC          = 'https://api.devnet.solana.com'
 const KEYPAIR_PATH = `${os.homedir()}/.config/solana/id.json`

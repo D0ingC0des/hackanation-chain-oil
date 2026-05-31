@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-chain_oil = "DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh"
+chain_oil = "49NBUcWMprgym8gqFegGEVisvcEqHe5RgHmpzmKdaaDy"
 
 [programs.devnet]
-chain_oil = "DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh"
+chain_oil = "49NBUcWMprgym8gqFegGEVisvcEqHe5RgHmpzmKdaaDy"
 
 [registry]
 url = "https://api.apr.dev"

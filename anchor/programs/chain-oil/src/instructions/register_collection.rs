@@ -74,16 +74,16 @@ pub fn handler(ctx: Context<RegisterCollection>, params: RegisterCollectionParam
 
     // Ler SOL/USD do Chainlink
     let feed_data = ctx.accounts.chainlink_feed.try_borrow_data()?;
-    let feed = read_feed_v2(&feed_data, &expected_owner.to_bytes())
+    let feed = read_feed_v2(feed_data, expected_owner.to_bytes())
         .map_err(|_| error!(ChainOilError::InvalidFeedOwner))?;
 
-    let round = feed.latest_round_data();
+    let round = feed.latest_round_data().ok_or(error!(ChainOilError::StaleFeedData))?;
     let decimals = feed.decimals();
 
-    // Validar freshness
+    // Validar freshness (round.timestamp é u32 no chainlink_solana v2.0.8)
     let now = Clock::get()?.unix_timestamp;
     require!(
-        now - round.updated_at <= MAX_STALENESS_SECS,
+        now - round.timestamp as i64 <= MAX_STALENESS_SECS,
         ChainOilError::StaleFeedData
     );
 

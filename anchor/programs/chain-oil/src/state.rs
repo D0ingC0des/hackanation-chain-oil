@@ -43,3 +43,24 @@ pub struct OperatorState {
 impl OperatorState {
     pub const LEN: usize = 8 + 32 + 8 + 1; // 49
 }
+
+/// PDA global que armazena o preço atual do óleo (atualizado pelo Chainlink CRE).
+/// Seeds: [b"oil_oracle"]
+#[account]
+pub struct OilOracleState {
+    /// Preço do óleo em centavos BRL por litro (ex: 120 = R$1,20/L)
+    pub current_price: u64,   // 8
+    /// Timestamp Unix da última atualização
+    pub last_update: i64,     // 8
+    /// Contador de updates — proteção anti-replay
+    pub update_count: u64,    // 8
+    /// Única carteira autorizada a chamar update_price (wallet do CRE)
+    pub authority: Pubkey,    // 32
+    pub bump: u8,             // 1
+}
+
+impl OilOracleState {
+    // 8 (discriminator) + 8 + 8 + 8 + 32 + 1 = 65
+    pub const LEN: usize = 8 + 8 + 8 + 8 + 32 + 1;
+    pub const SEED: &'static [u8] = b"oil_oracle";
+}

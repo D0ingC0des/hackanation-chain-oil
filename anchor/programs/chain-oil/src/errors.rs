@@ -8,4 +8,10 @@ pub enum ChainOilError {
     StaleFeedData,
     #[msg("Litros inválidos — deve ser > 0")]
     InvalidLiters,
+    #[msg("Autoridade inválida — somente o CRE pode atualizar o preço")]
+    UnauthorizedAuthority,
+    #[msg("Timestamp não é mais recente que o último update")]
+    StaleUpdate,
+    #[msg("Preço inválido — deve estar entre 50 e 2000 centavos (R$0,50–R$20,00)")]
+    InvalidPrice,
 }

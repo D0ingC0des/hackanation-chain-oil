@@ -121,7 +121,7 @@ function SuccessPage() {
                 <div className="size-10 rounded-2xl bg-gaming/15 flex items-center justify-center text-gaming">
                   <Trophy className="size-5" />
                 </div>
-                <div className="mt-3 text-2xl font-extrabold">OIL</div>
+                <div className="mt-3 text-2xl font-extrabold">COT</div>
                 <div className="text-xs text-muted-foreground">tokens Solana</div>
               </div>
             </div>
