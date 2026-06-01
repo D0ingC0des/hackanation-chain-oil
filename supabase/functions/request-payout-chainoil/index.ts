@@ -4,8 +4,8 @@
 import postgres from "npm:postgres@3";
 import { json, handleOptions } from "../_shared/cors.ts";
 
-const WOOVI_API_KEY = Deno.env.get("WOOVI_API_KEY") ?? "";
-const WOOVI_APP_ID = Deno.env.get("WOOVI_APP_ID") ?? "";
+// WOOVI_APP_ID = base64(clientId:clientSecret) gerado em "Autorização (AppID)" no painel Woovi
+const WOOVI_API_KEY = Deno.env.get("WOOVI_APP_ID") ?? Deno.env.get("WOOVI_API_KEY") ?? "";
 const WOOVI_MODE = (Deno.env.get("WOOVI_MODE") ?? "mock").toLowerCase();
 const WOOVI_BASE = Deno.env.get("WOOVI_API_URL") ?? "https://api.woovi-sandbox.com/api/v1";
 
@@ -69,7 +69,6 @@ Deno.serve(async (req) => {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: WOOVI_API_KEY },
       body: JSON.stringify({
-        appID: WOOVI_APP_ID,
         type: "PIX_KEY",
         value: amountCents,
         destinationAlias: col.citizen_phone,
