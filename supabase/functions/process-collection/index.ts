@@ -95,6 +95,7 @@ Deno.serve(async (req) => {
 
     // 6. PIX via Woovi — mesmo padrão do request-payout (Uber Money)
     const wooviKey = Deno.env.get("WOOVI_API_KEY") ?? "";
+    const wooviAppId = Deno.env.get("WOOVI_APP_ID") ?? "";
     const wooviMode = "sandbox"; //(Deno.env.get("WOOVI_MODE") ?? "sandbox").toLowerCase();
     const wooviBase = Deno.env.get("WOOVI_API_URL") ?? "https://api.woovi-sandbox.com/api/v1";
     console.log("[10] wooviMode:", wooviMode, "wooviKey set:", !!wooviKey, "base:", wooviBase);
@@ -125,6 +126,7 @@ Deno.serve(async (req) => {
           Authorization: wooviKey,
         },
         body: JSON.stringify({
+          appID: wooviAppId,
           type: "PIX_KEY",
           value: Math.round(rewardBrl * 100),
           destinationAlias: normalizedPixKey,
