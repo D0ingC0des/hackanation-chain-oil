@@ -1,7 +1,7 @@
-/**
- * initialize-oracle.ts — chama initialize_oracle no programa chain_oil (devnet).
+﻿/**
+ * initialize-oracle.ts â€” chama initialize_oracle no programa chain_oil (devnet).
  *
- * Executar UMA VEZ após o deploy para criar o PDA OilOracleState.
+ * Executar UMA VEZ apÃ³s o deploy para criar o PDA OilOracleState.
  * Usa o mesmo keypair da treasury como deployer e authority inicial.
  *
  * Rodar: npx tsx scripts/initialize-oracle.ts
@@ -18,7 +18,7 @@ import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 
-const PROGRAM_ID   = new PublicKey('49NBUcWMprgym8gqFegGEVisvcEqHe5RgHmpzmKdaaDy')
+const PROGRAM_ID   = new PublicKey('DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh')
 const RPC          = 'https://api.devnet.solana.com'
 const KEYPAIR_PATH = `${os.homedir()}/.config/solana/id.json`
 
@@ -49,10 +49,10 @@ async function main() {
   )
   console.log('OilOracleState PDA:', oraclePda.toBase58(), `(bump=${bump})`)
 
-  // Verificar se já existe
+  // Verificar se jÃ¡ existe
   const existing = await conn.getAccountInfo(oraclePda)
   if (existing) {
-    console.log('PDA já existe! Tamanho:', existing.data.length, 'bytes')
+    console.log('PDA jÃ¡ existe! Tamanho:', existing.data.length, 'bytes')
     const data = existing.data.subarray(8) // skip discriminator
     const currentPrice = data.readBigUInt64LE(0)
     const lastUpdate   = data.readBigInt64LE(8)
@@ -90,11 +90,11 @@ async function main() {
   const sig = await conn.sendRawTransaction(tx.serialize())
   console.log('Tx sig:', sig)
   await conn.confirmTransaction(sig, 'confirmed')
-  console.log('✓ OilOracleState criado!')
+  console.log('âœ“ OilOracleState criado!')
   console.log('  PDA    :', oraclePda.toBase58())
-  console.log('  Preço  : R$' + (Number(INITIAL_PRICE_CENTAVOS) / 100).toFixed(2) + '/L')
+  console.log('  PreÃ§o  : R$' + (Number(INITIAL_PRICE_CENTAVOS) / 100).toFixed(2) + '/L')
   console.log('  Authority:', deployer.publicKey.toBase58(), '(CRE wallet)')
   console.log('  Explorer:', `https://explorer.solana.com/address/${oraclePda.toBase58()}?cluster=devnet`)
 }
 
-main().catch((e) => { console.error('❌', e); process.exit(1) })
+main().catch((e) => { console.error('âŒ', e); process.exit(1) })

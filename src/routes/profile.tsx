@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
@@ -16,6 +16,7 @@ import {
   Globe,
   ArrowLeft,
   Droplets,
+  Flame,
 } from "lucide-react";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { getProfile, type WalletProfile } from "@/services/profileService";
@@ -164,6 +165,16 @@ function ProfilePage() {
             <p className="text-[10px] text-muted-foreground mb-0.5">Endereço completo</p>
             <p className="font-mono text-xs break-all select-all">{address}</p>
           </div>
+
+          {cotBalance !== null && cotBalance > 0 && (
+            <Link
+              to="/resgate"
+              className="flex items-center justify-center gap-2 w-full h-11 rounded-2xl bg-gradient-primary text-primary-foreground font-semibold text-sm transition hover:opacity-90"
+            >
+              <Flame className="size-4" />
+              Resgatar {cotBalance} COT
+            </Link>
+          )}
         </section>
 
         {/* Perfil */}

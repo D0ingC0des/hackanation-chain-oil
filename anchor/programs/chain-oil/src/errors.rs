@@ -14,4 +14,8 @@ pub enum ChainOilError {
     StaleUpdate,
     #[msg("Preço inválido — deve estar entre 50 e 2000 centavos (R$0,50–R$20,00)")]
     InvalidPrice,
+    #[msg("Token program inválido — deve ser Token-2022")]
+    InvalidTokenProgram,
+    #[msg("Falha ao queimar COT — saldo insuficiente ou conta inválida")]
+    BurnFailed,
 }

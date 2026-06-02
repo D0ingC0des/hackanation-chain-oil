@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SuccessRouteImport } from './routes/success'
+import { Route as ResgateRouteImport } from './routes/resgate'
 import { Route as ResetRouteImport } from './routes/reset'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProcessingRouteImport } from './routes/processing'
@@ -23,6 +24,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const SuccessRoute = SuccessRouteImport.update({
   id: '/success',
   path: '/success',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResgateRoute = ResgateRouteImport.update({
+  id: '/resgate',
+  path: '/resgate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetRoute = ResetRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
   '/reset': typeof ResetRoute
+  '/resgate': typeof ResgateRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRoutesByTo {
@@ -93,6 +100,7 @@ export interface FileRoutesByTo {
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
   '/reset': typeof ResetRoute
+  '/resgate': typeof ResgateRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRoutesById {
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   '/processing': typeof ProcessingRoute
   '/profile': typeof ProfileRoute
   '/reset': typeof ResetRoute
+  '/resgate': typeof ResgateRoute
   '/success': typeof SuccessRoute
 }
 export interface FileRouteTypes {
@@ -120,6 +129,7 @@ export interface FileRouteTypes {
     | '/processing'
     | '/profile'
     | '/reset'
+    | '/resgate'
     | '/success'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -132,6 +142,7 @@ export interface FileRouteTypes {
     | '/processing'
     | '/profile'
     | '/reset'
+    | '/resgate'
     | '/success'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/processing'
     | '/profile'
     | '/reset'
+    | '/resgate'
     | '/success'
   fileRoutesById: FileRoutesById
 }
@@ -157,6 +169,7 @@ export interface RootRouteChildren {
   ProcessingRoute: typeof ProcessingRoute
   ProfileRoute: typeof ProfileRoute
   ResetRoute: typeof ResetRoute
+  ResgateRoute: typeof ResgateRoute
   SuccessRoute: typeof SuccessRoute
 }
 
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/success'
       fullPath: '/success'
       preLoaderRoute: typeof SuccessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resgate': {
+      id: '/resgate'
+      path: '/resgate'
+      fullPath: '/resgate'
+      preLoaderRoute: typeof ResgateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset': {
@@ -245,6 +265,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProcessingRoute: ProcessingRoute,
   ProfileRoute: ProfileRoute,
   ResetRoute: ResetRoute,
+  ResgateRoute: ResgateRoute,
   SuccessRoute: SuccessRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,7 +1,7 @@
-/**
- * smoke-register-collection.ts — testa register_collection on-chain devnet.
+﻿/**
+ * smoke-register-collection.ts â€” testa register_collection on-chain devnet.
  *
- * Simula: operador registra uma coleta de óleo com atestação Chainlink SOL/USD.
+ * Simula: operador registra uma coleta de Ã³leo com atestaÃ§Ã£o Chainlink SOL/USD.
  * Usa o keypair local (~/.config/solana/id.json) como operador.
  *
  * Rodar: npx tsx scripts/smoke-register-collection.ts
@@ -18,7 +18,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 
-const PROGRAM_ID   = new PublicKey('49NBUcWMprgym8gqFegGEVisvcEqHe5RgHmpzmKdaaDy')
+const PROGRAM_ID   = new PublicKey('DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh')
 const SOL_USD_FEED = new PublicKey('HgTtcbcmp5BeThax5AU8vg4VwK79qAvAKKegfthMvWdo')
 const RPC          = 'https://api.devnet.solana.com'
 const KEYPAIR_PATH = `${os.homedir()}/.config/solana/id.json`
@@ -33,11 +33,11 @@ function u64LE(n: bigint): Buffer {
   return buf
 }
 
-/** Lê total_collections do PDA do operador; retorna 0n se a conta ainda não existe. */
+/** LÃª total_collections do PDA do operador; retorna 0n se a conta ainda nÃ£o existe. */
 async function fetchOperatorSeq(conn: Connection, pda: PublicKey): Promise<bigint> {
   const acc = await conn.getAccountInfo(pda)
   if (!acc) return 0n
-  // OperatorState (após 8 bytes de discriminador Anchor):
+  // OperatorState (apÃ³s 8 bytes de discriminador Anchor):
   // operator: Pubkey (32) | total_collections: u64 (8) | bump: u8 (1)
   return acc.data.subarray(8).readBigUInt64LE(32)
 }
@@ -49,7 +49,7 @@ async function main() {
   )
   console.log('Operator  :', operator.publicKey.toBase58())
 
-  // PDA: operator_state — seeds: ["operator_state", operator.pubkey]
+  // PDA: operator_state â€” seeds: ["operator_state", operator.pubkey]
   const [operatorStatePda] = PublicKey.findProgramAddressSync(
     [Buffer.from('operator_state'), operator.publicKey.toBuffer()],
     PROGRAM_ID,
@@ -60,14 +60,14 @@ async function main() {
   const seqBuf = Buffer.alloc(8)
   seqBuf.writeBigUInt64LE(seq, 0)
 
-  // PDA: collection — seeds: ["collection", operator.pubkey, seq_le]
+  // PDA: collection â€” seeds: ["collection", operator.pubkey, seq_le]
   const [collectionPda] = PublicKey.findProgramAddressSync(
     [Buffer.from('collection'), operator.publicKey.toBuffer(), seqBuf],
     PROGRAM_ID,
   )
   console.log('Collection:', collectionPda.toBase58(), `(seq=${seq})`)
 
-  // supabase_id: 16 bytes (UUID → bytes; aqui usamos random para smoke test)
+  // supabase_id: 16 bytes (UUID â†’ bytes; aqui usamos random para smoke test)
   const supabaseId = randomBytes(16)
 
   const litersML       = 2500n  // 2.5 L
@@ -98,11 +98,11 @@ async function main() {
   tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash
   tx.sign(operator)
 
-  console.log('\nEnviando tx…')
+  console.log('\nEnviando txâ€¦')
   const sig = await conn.sendRawTransaction(tx.serialize())
   console.log('Tx sig:', sig)
   await conn.confirmTransaction(sig, 'confirmed')
-  console.log('✓ Confirmada!')
+  console.log('âœ“ Confirmada!')
   console.log(`  https://explorer.solana.com/tx/${sig}?cluster=devnet`)
 
   // Verificar resultado
@@ -116,4 +116,4 @@ async function main() {
   }
 }
 
-main().catch((e) => { console.error('❌', e); process.exit(1) })
+main().catch((e) => { console.error('âŒ', e); process.exit(1) })

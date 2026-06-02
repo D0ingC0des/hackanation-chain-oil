@@ -25,7 +25,7 @@ import { createHash } from 'node:crypto'
 import fs from 'node:fs'
 import os from 'node:os'
 
-const PROGRAM_ID    = new PublicKey('49NBUcWMprgym8gqFegGEVisvcEqHe5RgHmpzmKdaaDy')
+const PROGRAM_ID    = new PublicKey('DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh')
 const RPC           = 'https://api.devnet.solana.com'
 const KEYPAIR_PATH  = `${os.homedir()}/.config/solana/id.json`
 const OIL_RATE_API  = 'https://hackanation-chain-oil.vercel.app/api/oil-rate'

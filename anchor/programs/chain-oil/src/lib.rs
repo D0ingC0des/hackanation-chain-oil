@@ -6,8 +6,9 @@ pub mod errors;
 
 use instructions::register_collection::*;
 use instructions::oracle::*;
+use instructions::burn::*;
 
-declare_id!("49NBUcWMprgym8gqFegGEVisvcEqHe5RgHmpzmKdaaDy");
+declare_id!("DdyUTHY4Kv1ig4tUUecSKWjsiX4MCXduUuveKJfUpQhh");
 
 #[program]
 pub mod chain_oil {
@@ -42,5 +43,12 @@ pub mod chain_oil {
         source_timestamp: i64,
     ) -> Result<()> {
         instructions::oracle::update_price_handler(ctx, new_price, source_timestamp)
+    }
+
+    /// Queima tokens COT do operador via CPI ao Token-2022.
+    /// O operador é o único signatário — queima os próprios tokens.
+    /// `amount`: quantidade de COT a queimar (1 COT = 1 litro).
+    pub fn burn_cot(ctx: Context<BurnCot>, amount: u64) -> Result<()> {
+        instructions::burn::handler(ctx, amount)
     }
 }
