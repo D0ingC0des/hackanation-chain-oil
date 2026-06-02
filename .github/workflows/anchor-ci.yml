@@ -78,8 +78,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: anchor/package-lock.json
 
       - name: Install Anchor test deps
         working-directory: anchor
@@ -133,8 +131,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: "npm"
-          cache-dependency-path: anchor/package-lock.json
 
       - name: Install Anchor test deps
         working-directory: anchor
