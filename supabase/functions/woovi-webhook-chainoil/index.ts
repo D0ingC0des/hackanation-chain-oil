@@ -3,28 +3,12 @@
 // troca payouts por chainoil.collections; remove fechamento de loan.
 import postgres from "npm:postgres@3";
 import { jsonOpen as json, handleOptionsOpen as handleOptions } from "../_shared/cors.ts";
+import { verifyHmac } from "../_shared/hmac.ts";
 
 const WEBHOOK_SECRET = Deno.env.get("WOOVI_WEBHOOK_SECRET");
 // ⚠️ Skip HMAC só para sandbox enquanto não temos o secret no painel.
 // NUNCA ativar em prod — qualquer chamada externa fica aceita.
 const INSECURE_MODE = Deno.env.get("WOOVI_WEBHOOK_INSECURE_MODE") === "true";
-
-async function verifyHmac(rawBody: string, signature: string, secret: string): Promise<boolean> {
-  const sig = signature.startsWith("sha256=") ? signature.slice(7) : signature;
-  const key = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const computed = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(rawBody));
-  const hex = Array.from(new Uint8Array(computed)).map((b) => b.toString(16).padStart(2, "0")).join("");
-  if (hex.length !== sig.length) return false;
-  let mismatch = 0;
-  for (let i = 0; i < hex.length; i++) mismatch |= hex.charCodeAt(i) ^ sig.charCodeAt(i);
-  return mismatch === 0;
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return handleOptions();
