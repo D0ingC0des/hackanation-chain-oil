@@ -1,5 +1,7 @@
 # ChainOil — Recycle Oil. Get Paid. On-Chain.
 
+**Versão:** v1.40
+
 > **Solana Hackathon 2026** · Mobile-first PWA for collecting used cooking oil and delivering instant PIX + on-chain COT tokens.
 
 ---
