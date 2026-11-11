@@ -1,5 +1,6 @@
 {
   "name": "chain_oil_drop_rewards",
+  "version": "1.40.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
